@@ -303,7 +303,7 @@
 					},
 					"esbmc.solver.customSmtSolverPath": {
 						"type": "string",
-						"markdownDescription": "Sets the program path for the custom SMT solver if `#esbmc.solver.smtSolver#` is set to `custom",
+						"markdownDescription": "Sets the program path for the custom SMT solver if `#esbmc.solver.smtSolver#` is set to `custom`",
 						"order": 2
 					},
 					"esbmc.solver.smtLibFormat": {
