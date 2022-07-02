@@ -603,7 +603,7 @@
 		"commands": [
 			{
 				"command": "vscode-esbmc.runESBMC",
-				"title": "Check function using ESBMC"
+				"title": "ESBMC: Verify file"
 			}
 		]
 	},
