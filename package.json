@@ -130,47 +130,64 @@
 				"title": "Trace",
 				"order": 100,
 				"properties": {
-					"esbmc.trace.quiet": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of unwinding information during symbolic execution",
-						"order": 1
-					},
-					"esbmc.trace.compact": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "TODO: No value in --help!",
-						"order": 2
-					},
-					"esbmc.trace.symex": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of instructions during symbolic execution",
-						"order": 3
-					},
-					"esbmc.trace.ssa": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of SSA during SMT encoding",
-						"order": 4
-					},
-					"esbmc.trace.symexSsa": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of SSA during symbolic execution",
-						"order": 5
-					},
-					"esbmc.trace.gotoValueSet": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of value-set analysis for the goto functions",
-						"order": 6
-					},
-					"esbmc.trace.symexValueSet": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable or disable the printing of value-set analysis during symbolic execution",
-						"order": 7
+					"esbmc.trace.options": {
+						"type": "object",
+						"default": {
+							"quiet": false,
+							"compact": false,
+							"symex": false,
+							"ssa": false,
+							"symex-ssa": false,
+							"goto-value-set": false,
+							"symex-value-set": false
+						},
+						"properties": {
+							"quiet": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output unwinding information during symbolic execution",
+								"order": 1
+							},
+							"compact": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output a compact representation of the generated counterexample",
+								"order": 2
+							},
+							"symex": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output the instructions during symbolic execution",
+								"order": 3
+							},
+							"ssa": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output the SSA during SMT encoding",
+								"order": 4
+							},
+							"symex-ssa": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output the SSA during symbolic execution",
+								"order": 5
+							},
+							"goto-value-set": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output the value-set analysis for the goto functions",
+								"order": 6
+							},
+							"symex-value-set": {
+								"type": "boolean",
+								"default": false,
+								"description": "Output the value-set analysis during symbolic execution",
+								"order": 7
+							}
+						},
+						"additionalProperties": false,
+						"markdownDescription": "Enable or disable certain trace options.",
+						"order": 0
 					}
 				}
 			},
