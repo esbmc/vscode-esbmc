@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
+import { ConfigurationParser } from '../../parsers/configParser';
 
 const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple']);
 
-export async function run():Promise<void> {
+export async function run(configurationParser:ConfigurationParser):Promise<void> {
     const activeTextEditor = vscode.window.activeTextEditor;
     if( activeTextEditor !== undefined ) {
         const currentlyOpenTabfilePath = activeTextEditor.document.fileName;
@@ -12,7 +13,9 @@ export async function run():Promise<void> {
             return;
         }
         if( SUPPORTED_EXTENSIONS.has(fileExt!) ) {
-            const cmd = `esbmc ${currentlyOpenTabfilePath}`;
+            const flags = configurationParser.parse();
+            console.log(flags);
+            const cmd = `esbmc ${currentlyOpenTabfilePath} ${flags}`;
             const terminal = vscode.window.createTerminal("ESBMC");
             terminal.show();
             terminal.sendText(cmd);
