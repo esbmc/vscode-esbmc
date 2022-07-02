@@ -186,7 +186,7 @@
 							}
 						},
 						"additionalProperties": false,
-						"markdownDescription": "Enable or disable certain trace options.",
+						"markdownDescription": "Enable or disable certain trace options",
 						"order": 0
 					}
 				}
@@ -489,17 +489,17 @@
 							}
 						},
 						"additionalProperties": false,
-						"markdownDescription": "Enable or disable checking of certain properties.",
+						"markdownDescription": "Enable or disable checking of certain properties",
 						"scope": "window",
 						"order": 1
 					},
-					"esbmc.esbmc.propertyChecking.checkStackLimit.": {
+					"esbmc.esbmc.propertyChecking.checkStackLimit": {
 						"type": "number",
 						"default": -1,
 						"markdownDescription": "Check that the stack limit is respected, a value of `-1` indicates that this is not checked",
 						"order": 2
 					},
-					"esbmc.esbmc.propertyChecking.checkErrorLabel.": {
+					"esbmc.esbmc.propertyChecking.checkErrorLabel": {
 						"type": "string",
 						"markdownDescription": "Check that a given label is unreachable",
 						"order": 3
