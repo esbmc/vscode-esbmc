@@ -2,6 +2,7 @@
   "name": "vscode-esbmc",
 	"displayName": "ESBMC",
 	"description": "TODO: Fill in later",
+	"publisher": "jossmoff",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.68.0"
@@ -10,7 +11,7 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:vscode-esbmc.helloWorld"
+		"onCommand:vscode-esbmc.runESBMC"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -597,13 +598,12 @@
 						"order": 4
 					}
 				}
-
 			}
 		],
 		"commands": [
 			{
-				"command": "vscode-esbmc.helloWorld",
-				"title": "Hello World"
+				"command": "vscode-esbmc.runESBMC",
+				"title": "Check function using ESBMC"
 			}
 		]
 	},
