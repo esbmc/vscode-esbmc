@@ -433,6 +433,11 @@
                 "default": true,
                 "description": "Check division by zero"
               },
+              "pointer": {
+                "type": "boolean",
+                "default": true,
+                "description": "Check pointers"
+              },
               "pointerAlignment": {
                 "type": "boolean",
                 "default": true,
@@ -494,13 +499,13 @@
             "scope": "window",
             "order": 1
           },
-          "esbmc.esbmc.propertyChecking.checkStackLimit": {
+          "esbmc.propertyChecking.checkStackLimit": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Check that the stack limit is respected, a value of `-1` indicates that this is not checked",
             "order": 2
           },
-          "esbmc.esbmc.propertyChecking.checkErrorLabel": {
+          "esbmc.propertyChecking.checkErrorLabel": {
             "type": "string",
             "markdownDescription": "Check that a given label is unreachable",
             "order": 3
@@ -630,6 +635,7 @@
     "typescript": "^4.7.2"
   },
   "dependencies": {
+    "flatten-anything": "^3.0.2",
     "object-hash": "^3.0.0"
   }
 }
