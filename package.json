@@ -72,13 +72,12 @@
           },
           "esbmc.frontEnd.architecture": {
             "type": "string",
-            "default": "Linux/I386",
+            "default": "i386-linux",
             "enum": [
-              "Linux/I386",
-              "MACOS/I386",
-              "PPC/I386",
-              "Windows/I386",
-              "None"
+              "i386-macos",
+              "ppc-macos",
+              "i386-linux",
+              "i386-win32"
             ],
             "markdownDescription": "Set the machine architecture",
             "order": 7
@@ -88,8 +87,8 @@
             "default": "auto",
             "enum": [
               "auto",
-              "little",
-              "big"
+              "little-endian",
+              "big-endian"
             ],
             "markdownDescription": "Sets the endianness for word-byte conversions",
             "order": 8
@@ -405,6 +404,7 @@
               "assertions": true,
               "arrayBounds": true,
               "divisionByZero": true,
+              "pointer": true,
               "pointerAlignment": true,
               "pointerRelations": true,
               "nan": false,

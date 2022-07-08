@@ -1,6 +1,77 @@
-export function parseConcurrencyChecking(values: {[key: string]: any}): string[] {
+import { flatten } from 'flatten-anything'
+
+type TConfig = {[key: string]: any};
+
+export function parseFrontEnd(values: TConfig): string[] {
+    const propertyCheckingConfig : TConfig = flatten(values)
     var flags: string[] = [];
-    for (let [key, value] of Object.entries(values)) {
+    for (let [key, value] of Object.entries(propertyCheckingConfig)) {
+        // Map each changed configuration and check value before adding flags
+        switch(key) { 
+            case "includePath": {
+                // If includeAfter isn't in values dont wish to add
+                // system include path so use default --include 
+                if(!('includeAfter' in values))
+                    flags.push(`--include ${value}`);
+                break;
+            }
+            case "includeAfter": {
+                // If includeAfter is in values and it is true
+                // we want to add system include path after
+                if('includePath' in values && value)
+                    flags.push(`--idirafter ${values["includePath"]}`);
+                break;
+            }
+            case "defineMacros": {
+                flags.push(`--define ${value}`);
+                break;
+            }
+            case "ProgramLoopClaimVcs": {
+                if(value !== `none`) {
+                    flags.push(`--${value}`);
+                } 
+                break;
+            }
+            case "claimRemoval": {
+                if(value)
+                    flags.push(`--all-claims`)
+                break;
+            }
+            case "wordLength": {
+                flags.push(`--${value}`);
+                break;
+            }
+            case "architecture": {
+                flags.push(`--${value}`);
+                break;
+            }
+            case "endianness": {
+                if(value !== `auto`)
+                    flags.push(`--${value}`);
+                break;
+            }
+            case "printingOptions": {
+                if(value !== `verify`)
+                    flags.push(`--${value}`);
+                break;
+            }
+            case "resultOnly": {
+                if(value)
+                    flags.push(`--result-only`);
+                break;
+            }
+            default: { 
+               break; 
+            } 
+         }
+    }
+    return flags;
+}
+
+export function parseConcurrencyChecking(config: TConfig): string[] {
+    var flags: string[] = [];
+    const flatConfig : TConfig = flatten(config);
+    for (let [key, value] of Object.entries(flatConfig)) {
         // Map each changed configuration and check value before adding flags
         switch(key) { 
             case `checkAllInterleavings`: {
@@ -35,45 +106,43 @@ export function parseConcurrencyChecking(values: {[key: string]: any}): string[]
     return flags;
 }
 
-export function parseTrace(values: {[key: string]: Object}): string[] {
+export function parseTrace(config: TConfig): string[] {
     var flags: string[] = [];
-    // Currently options only has 1 setting: options, but it is an object so we will just directly 
-    // unwrap it then parse it similarly.
-    var options_values = values['options'];
-    for (let [key, value] of Object.entries(options_values)) {
+    const flatConfig : TConfig = flatten(config);
+    for (let [key, value] of Object.entries(flatConfig)) {
         // Map each changed configuration and check value before adding flags
         switch(key) { 
-            case `quiet`: {
+            case `options.quiet`: {
                 if(value)
                     flags.push(`--quiet`);
                 break; 
             } 
-            case `compact`: { 
+            case `options.compact`: { 
                 if(value)
                     flags.push(`--compact-trace`) 
                 break; 
             } 
-            case `ssa`: { 
+            case `options.ssa`: { 
                 if(value)
                     flags.push(`--ssa-trace`) 
                 break; 
             }
-            case `symex`: { 
+            case `options.symex`: { 
                 if(value)
                     flags.push(`--symex-trace`) 
                 break; 
             }
-            case `symex-ssa`: { 
+            case `options.symex-ssa`: { 
                 if(value)
                     flags.push(`--symex-ssa-trace`) 
                 break; 
             }
-            case `goto-value-set`: {
+            case `options.goto-value-set`: {
                 if(value)
                     flags.push(`--show-goto-value-sets`) 
                 break; 
             }
-            case `show-symex-value-set`: { 
+            case `options.show-symex-value-set`: { 
                 if(value)
                     flags.push(`--show-symex-value-set`) 
                 break; 
@@ -86,7 +155,7 @@ export function parseTrace(values: {[key: string]: Object}): string[] {
     return flags;
 }
 
-export function parseKInduction(values: {[key: string]: Object}): string[] {
+export function parseKInduction(values: TConfig): string[] {
     var flags: string[] = [];
     for (let [key, value] of Object.entries(values)) {
         // Map each changed configuration and check value before adding flags
@@ -106,13 +175,14 @@ export function parseKInduction(values: {[key: string]: Object}): string[] {
                     flags.push(`--inductive-step`) 
                 break; 
             }
-            case `prove`: { 
-                if(value)
+            case `prove`: {
+                // parallelise value cannot be set if we want to just want to 
+                // perform non-parallel k-induction
+                if(value && !('parallelise' in values) && values['prove'])
                     flags.push(`--k-induction`) 
                 break; 
             }
-            case `parallelise`: { 
-                // TODO: Figure out a good way for mutual exclusion
+            case `parallelise`: {
                 if(value && 'prove' in values && values['prove'])
                     flags.push(`--k-induction-parallel`) 
                 break; 
@@ -142,3 +212,105 @@ export function parseKInduction(values: {[key: string]: Object}): string[] {
     }
     return flags;
 }
+
+export function parsePropertyChecking(values: TConfig): string[] {
+    const propertyCheckingConfig : TConfig = flatten(values)
+    var flags: string[] = [];
+    for (let [key, value] of Object.entries(propertyCheckingConfig)) {
+        // Map each changed configuration and check value before adding flags
+        console.log(value)
+        switch(key) { 
+            case "properties.assertions": {
+                if(!value)
+                    flags.push(`--no-assertions`);
+                break;
+            }
+            case "properties.arrayBounds": {
+                if(!value)
+                    flags.push(`--no-bounds-check`);
+                break;
+            }
+            case "properties.divisionByZero": {
+                if(!value)
+                    flags.push(`--no-div-by-zero-check`);
+                break;
+            }
+            case "properties.pointer": {
+                if(!value)
+                    flags.push(`--no-pointer-check`);
+                break;
+            }
+            case "properties.pointerAlignment": {
+                if(!value)
+                    flags.push(`--no-align-check`);
+                break;
+            }
+            case "properties.pointerRelations": {
+                if(value)
+                    flags.push(`--no-pointer-relation-check`);
+                break;
+            }
+            case "properties.nan": {
+                if(value)
+                    flags.push(`--nan-check `);
+                break;
+            }
+            case "properties.memoryLeak": {
+                if(value)
+                    flags.push(`--memory-leak-check`);
+                break;
+            }
+            case "properties.overflowAndUnderflow": {
+                if(value)
+                    flags.push(`--overflow-check`);
+                break;
+            }
+            case "properties.structFields": {
+                if(value)
+                    flags.push(`--struct-fields-check`);
+                break;
+            }
+            case "properties.deadlock": {
+                if(value)
+                    flags.push(`--deadlock-check`);
+                break;
+            }
+            case "properties.dataRace": {
+                if(value)
+                    flags.push(`--data-races-check`);
+                break;
+            }
+            case "properties.lockOrder": {
+                if(value)
+                    flags.push(`--lock-order-check`);
+                break;
+            }
+            case "properties.atomicity": {
+                if(value)
+                    flags.push(`--atomicity-check`);
+                break;
+            }
+            case "properties.forceMallocSuccess": {
+                if(value)
+                    flags.push(`--force-malloc-success`);
+                break;
+            }
+            case "checkStackLimit": {
+                if(value > 0)
+                    flags.push(`--stack-limit ${value}`);
+                break;
+            }
+            case "checkErrorLabel": {
+                flags.push(`--error-label ${value}`);
+                break;
+            }
+            default: { 
+               break; 
+            } 
+         }
+    }
+    return flags;
+}
+
+
+

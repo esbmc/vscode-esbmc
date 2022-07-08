@@ -1,8 +1,9 @@
 import { workspace } from "vscode";
 import { sha1 } from "object-hash";
 
-import { parseConcurrencyChecking, parseTrace, parseKInduction } from './sectionParsers';
+import { parseConcurrencyChecking, parseTrace, parseKInduction, parsePropertyChecking, parseFrontEnd } from './sectionParsers';
 
+type TConfig = {[key: string]: any};
 
 export class ConfigurationParser {
 
@@ -10,9 +11,9 @@ export class ConfigurationParser {
     private _section_parsers = {
         'bmc': undefined, 
         'concurrencyChecking': parseConcurrencyChecking, 
-        'frontEnd': undefined, 
+        'frontEnd': parseFrontEnd, 
         'kinduction': parseKInduction, 
-        'propertyChecking': undefined, 
+        'propertyChecking': parsePropertyChecking, 
         'solver': undefined, 
         'trace': parseTrace
     };
@@ -35,8 +36,7 @@ export class ConfigurationParser {
         var flags: string[] = [];
         // Parse each section
         for (let [section, parser] of Object.entries(this._section_parsers)) {
-            let section_config = workspace_config.inspect<{[key: string]: Object}>(section);
-            // TODO: This is a bit hacky, need a better way really
+            let section_config = workspace_config.inspect<TConfig>(section);
             let section_changed_values = section_config?.['globalValue'];
             // If sections configurations are all default we will have 
             // undefined section values and should skip

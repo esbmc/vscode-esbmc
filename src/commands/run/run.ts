@@ -3,7 +3,10 @@ import { ConfigurationParser } from '../../parsers/configParser';
 
 const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple']);
 
-export async function run(configurationParser:ConfigurationParser):Promise<void> {
+/**
+ * Takes a path and extracts the file extension.
+ */
+export async function run(configParser: ConfigurationParser):Promise<void> {
     const activeTextEditor = vscode.window.activeTextEditor;
     if( activeTextEditor !== undefined ) {
         const currentlyOpenTabfilePath = activeTextEditor.document.fileName;
@@ -13,7 +16,7 @@ export async function run(configurationParser:ConfigurationParser):Promise<void>
             return;
         }
         if( SUPPORTED_EXTENSIONS.has(fileExt!) ) {
-            const flags = configurationParser.parse();
+            const flags = configParser.parse();
             console.log(flags);
             const cmd = `esbmc ${currentlyOpenTabfilePath} ${flags}`;
             const terminal = vscode.window.createTerminal("ESBMC");
@@ -27,6 +30,10 @@ export async function run(configurationParser:ConfigurationParser):Promise<void>
     }
 }
 
+/**
+ * Takes a path and extracts the file extension.
+ * @param file Full path to the file.
+ */
 function getFileExtension(file:string): string | undefined {
     const fileExt = file.split('.').pop();
     // If there is no file extension this holds
