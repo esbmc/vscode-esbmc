@@ -1,9 +1,9 @@
 import { flatten } from 'flatten-anything'
 
-type TConfig = {[key: string]: any};
+import { Config } from "../@types/vscode.configuration";
 
-export function parseFrontEnd(values: TConfig): string[] {
-    const propertyCheckingConfig : TConfig = flatten(values)
+export function parseFrontEnd(values: Config): string[] {
+    const propertyCheckingConfig : Config = flatten(values)
     var flags: string[] = [];
     for (let [key, value] of Object.entries(propertyCheckingConfig)) {
         // Map each changed configuration and check value before adding flags
@@ -68,9 +68,9 @@ export function parseFrontEnd(values: TConfig): string[] {
     return flags;
 }
 
-export function parseConcurrencyChecking(config: TConfig): string[] {
+export function parseConcurrencyChecking(config: Config): string[] {
     var flags: string[] = [];
-    const flatConfig : TConfig = flatten(config);
+    const flatConfig : Config = flatten(config);
     for (let [key, value] of Object.entries(flatConfig)) {
         // Map each changed configuration and check value before adding flags
         switch(key) { 
@@ -106,9 +106,9 @@ export function parseConcurrencyChecking(config: TConfig): string[] {
     return flags;
 }
 
-export function parseTrace(config: TConfig): string[] {
+export function parseTrace(config: Config): string[] {
     var flags: string[] = [];
-    const flatConfig : TConfig = flatten(config);
+    const flatConfig : Config = flatten(config);
     for (let [key, value] of Object.entries(flatConfig)) {
         // Map each changed configuration and check value before adding flags
         switch(key) { 
@@ -155,7 +155,7 @@ export function parseTrace(config: TConfig): string[] {
     return flags;
 }
 
-export function parseKInduction(values: TConfig): string[] {
+export function parseKInduction(values: Config): string[] {
     var flags: string[] = [];
     for (let [key, value] of Object.entries(values)) {
         // Map each changed configuration and check value before adding flags
@@ -213,8 +213,8 @@ export function parseKInduction(values: TConfig): string[] {
     return flags;
 }
 
-export function parsePropertyChecking(values: TConfig): string[] {
-    const propertyCheckingConfig : TConfig = flatten(values)
+export function parsePropertyChecking(values: Config): string[] {
+    const propertyCheckingConfig : Config = flatten(values)
     var flags: string[] = [];
     for (let [key, value] of Object.entries(propertyCheckingConfig)) {
         // Map each changed configuration and check value before adding flags
