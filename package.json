@@ -37,7 +37,7 @@
             "markdownDescription": "Define preprocessor macro",
             "order": 3
           },
-          "esbmc.frontEnd.ProgramLoopClaimVcs": {
+          "esbmc.frontEnd.programLoopClaimVcs": {
             "type": "string",
             "default": "none",
             "enum": [
@@ -216,8 +216,8 @@
           },
           "esbmc.bmc.unwind": {
             "type": "number",
-            "default": 10,
-            "markdownDescription": "Unwind all loops a given number of times",
+            "default": -1,
+            "markdownDescription": "Unwind all loops a given number of times a value of `-1` enforces no limit",
             "order": 4
           },
           "esbmc.bmc.unwindSet": {
@@ -227,7 +227,7 @@
           },
           "esbmc.bmc.unwindingAssertions": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "markdownDescription": "Enable or disable the generation of unwinding assertions",
             "order": 6
           },
@@ -252,7 +252,7 @@
           "esbmc.bmc.gotoUnwinding": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "Enable or disable the printing of value-set analysis for the goto functions",
+            "markdownDescription": "Enable or unroll bounded loops at goto level",
             "order": 10
           },
           "esbmc.bmc.sliceAssumes": {
@@ -288,15 +288,15 @@
         "properties": {
           "esbmc.solver.smtSolver": {
             "type": "string",
-            "default": "Boolector",
+            "default": "boolector",
             "enum": [
-              "Boolector",
-              "Z3",
-              "MathSAT",
-              "CVC4",
-              "Yices",
-              "Bitwuzla",
-              "Custom"
+              "boolector",
+              "z3",
+              "mathsat",
+              "cvc",
+              "yices",
+              "bitwuzla",
+              "custom"
             ],
             "markdownDescription": "Sets SMT solver used to model check the program",
             "order": 1
@@ -322,8 +322,8 @@
             "default": "auto",
             "enum": [
               "auto",
-              "BV",
-              "I/R"
+              "bv",
+              "ir"
             ],
             "markdownDescription": "Sets arithmetic used by the solver",
             "order": 5

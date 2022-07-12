@@ -16,8 +16,13 @@ export async function run(configParser: ConfigurationParser):Promise<void> {
             return;
         }
         if( SUPPORTED_EXTENSIONS.has(fileExt!) ) {
-            const flags = configParser.parse();
-            console.log(flags);
+            let flags: string;
+            try {
+                flags = configParser.parse();
+            } catch (error) {
+                vscode.window.showErrorMessage(`ESBMC: ${error}`);
+                return;
+            }
             const cmd = `esbmc ${currentlyOpenTabfilePath} ${flags}`;
             const terminal = vscode.window.createTerminal("ESBMC");
             terminal.show();
