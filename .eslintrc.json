@@ -4,9 +4,10 @@
         "es2021": true
     },
     "extends": [
-        "eslint:recommended"
+        "standard"
     ],
     "parser": "@typescript-eslint/parser",
+    "ignorePatterns": ["src/test/**/*"],
     "parserOptions": {
         "ecmaVersion": "latest",
         "sourceType": "module"
