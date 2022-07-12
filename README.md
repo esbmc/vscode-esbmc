@@ -1,4 +1,4 @@
-# vscode-esbmc README
+# ESBMC for Visual Studio Code
 
 This is the README for your extension "vscode-esbmc". After writing up a brief description, we recommend including the following sections.
 
