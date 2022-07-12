@@ -224,19 +224,20 @@ export class ConfigurationParser {
      * @param dependentDefaultValue the default value of the dependent setting
      * @param secondaryFlag the associated flag for the prerequisite setting
      * @param [prereqCondition] optional prerequisite conditions for adding flags
-     * @param [dependentCondition] optional dependent conditions for adding flags
      */
   private addDependentFlags (
     prereqKey: string, prereqValue: any,
     prereqDefaultValue: any, primaryFlag: string,
     dependentKey: string, dependentValue: any,
     dependentDefaultValue: any, secondaryFlag: string,
-    prereqCondition: boolean = true, dependentCondition: boolean = true): void {
+    prereqCondition?: boolean): void {
+    // Set prereqCondition is undefined
+    prereqCondition = prereqCondition || true
     // Dependent flag is added if the dependentKey is not in the section config
     if (prereqKey in this.flatSectionConfig && !(dependentKey in this.flatSectionConfig) && prereqCondition) {
       this.addGenericFlag(prereqValue, prereqDefaultValue, primaryFlag)
     }
-    if (prereqKey in this.flatSectionConfig && dependentKey in this.flatSectionConfig && prereqCondition && dependentCondition) {
+    if (prereqKey in this.flatSectionConfig && dependentKey in this.flatSectionConfig && prereqCondition) {
       this.addGenericFlag(dependentValue, dependentDefaultValue, secondaryFlag)
     }
   }
@@ -372,7 +373,6 @@ export class ConfigurationParser {
         break
       }
       case 'iterationMax': {
-        console.log([value > 0, value === -1])
         this.addMutexFlags(
           [value > 0, value === -1],
           [`--max-k-step ${value}`, '--unlimited-k-steps'],
@@ -610,8 +610,7 @@ export class ConfigurationParser {
                     dependentKey,
                     dependentValue,
                     dependentDefaultValue,
-                    `--smtlib-solver-prog 
-                    ${dependentValue}`,
+                    `--smtlib-solver-prog ${dependentValue}`,
                     value === 'custom'
         )
         break
