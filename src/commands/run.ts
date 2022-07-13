@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { ConfigurationParser } from '../../parsers/configParser'
+import { ConfigurationParser } from '../parsers/configParser'
 
 const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple'])
 

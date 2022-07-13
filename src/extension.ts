@@ -9,7 +9,7 @@ import { registerCommands } from './commands/registerCommands'
 export function activate (context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-esbmc" is now active!')
   // Register Commands
-  context.subscriptions.push(...registerCommands())
+  context.subscriptions.push(...registerCommands(context))
 }
 
 // this method is called when your extension is deactivated
