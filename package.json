@@ -11,8 +11,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-esbmc.runESBMC",
-    "onCommand:vscode-esbmc.installESBMC"
+    "onCommand:vscode-esbmc.verify",
+    "onCommand:vscode-esbmc.install",
+    "onCommand:vscode-esbmc.update"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -608,12 +609,16 @@
     ],
     "commands": [
       {
-        "command": "vscode-esbmc.runESBMC",
+        "command": "vscode-esbmc.verify",
         "title": "ESBMC: Verify file"
       },
       {
-        "command": "vscode-esbmc.installESBMC",
-        "title": "ESBMC: Install"
+        "command": "vscode-esbmc.install",
+        "title": "ESBMC: Install latest version"
+      },
+      {
+        "command": "vscode-esbmc.update",
+        "title": "ESBMC: Update to latest version"
       }
     ]
   },
@@ -634,6 +639,7 @@
     "@types/node": "16.x",
     "@types/node-fetch": "^2.6.2",
     "@types/object-hash": "^2.2.1",
+    "@types/semver": "^7.3.10",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
@@ -649,8 +655,10 @@
   },
   "dependencies": {
     "@microsoft/vscode-file-downloader-api": "^1.0.1",
-    "node-fetch": "^2.6.7",
+    "compare-versions": "^4.1.3",
     "flatten-anything": "^3.0.2",
-    "object-hash": "^3.0.0"
+    "node-fetch": "^2.6.7",
+    "object-hash": "^3.0.0",
+    "semver": "^7.3.7"
   }
 }
