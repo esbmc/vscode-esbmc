@@ -38,7 +38,7 @@
             "markdownDescription": "Define preprocessor macro",
             "order": 3
           },
-          "esbmc.frontEnd.ProgramLoopClaimVcs": {
+          "esbmc.frontEnd.programLoopClaimVcs": {
             "type": "string",
             "default": "none",
             "enum": [
@@ -73,13 +73,12 @@
           },
           "esbmc.frontEnd.architecture": {
             "type": "string",
-            "default": "Linux/I386",
+            "default": "i386-linux",
             "enum": [
-              "Linux/I386",
-              "MACOS/I386",
-              "PPC/I386",
-              "Windows/I386",
-              "None"
+              "i386-macos",
+              "ppc-macos",
+              "i386-linux",
+              "i386-win32"
             ],
             "markdownDescription": "Set the machine architecture",
             "order": 7
@@ -89,8 +88,8 @@
             "default": "auto",
             "enum": [
               "auto",
-              "little",
-              "big"
+              "little-endian",
+              "big-endian"
             ],
             "markdownDescription": "Sets the endianness for word-byte conversions",
             "order": 8
@@ -218,8 +217,8 @@
           },
           "esbmc.bmc.unwind": {
             "type": "number",
-            "default": 10,
-            "markdownDescription": "Unwind all loops a given number of times",
+            "default": -1,
+            "markdownDescription": "Unwind all loops a given number of times a value of `-1` enforces no limit",
             "order": 4
           },
           "esbmc.bmc.unwindSet": {
@@ -229,7 +228,7 @@
           },
           "esbmc.bmc.unwindingAssertions": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "markdownDescription": "Enable or disable the generation of unwinding assertions",
             "order": 6
           },
@@ -254,7 +253,7 @@
           "esbmc.bmc.gotoUnwinding": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "Enable or disable the printing of value-set analysis for the goto functions",
+            "markdownDescription": "Enable or unroll bounded loops at goto level",
             "order": 10
           },
           "esbmc.bmc.sliceAssumes": {
@@ -290,15 +289,15 @@
         "properties": {
           "esbmc.solver.smtSolver": {
             "type": "string",
-            "default": "Boolector",
+            "default": "boolector",
             "enum": [
-              "Boolector",
-              "Z3",
-              "MathSAT",
-              "CVC4",
-              "Yices",
-              "Bitwuzla",
-              "Custom"
+              "boolector",
+              "z3",
+              "mathsat",
+              "cvc",
+              "yices",
+              "bitwuzla",
+              "custom"
             ],
             "markdownDescription": "Sets SMT solver used to model check the program",
             "order": 1
@@ -324,8 +323,8 @@
             "default": "auto",
             "enum": [
               "auto",
-              "BV",
-              "I/R"
+              "bv",
+              "ir"
             ],
             "markdownDescription": "Sets arithmetic used by the solver",
             "order": 5
@@ -406,6 +405,7 @@
               "assertions": true,
               "arrayBounds": true,
               "divisionByZero": true,
+              "pointer": true,
               "pointerAlignment": true,
               "pointerRelations": true,
               "nan": false,
@@ -433,6 +433,11 @@
                 "type": "boolean",
                 "default": true,
                 "description": "Check division by zero"
+              },
+              "pointer": {
+                "type": "boolean",
+                "default": true,
+                "description": "Check pointers"
               },
               "pointerAlignment": {
                 "type": "boolean",
@@ -495,13 +500,13 @@
             "scope": "window",
             "order": 1
           },
-          "esbmc.esbmc.propertyChecking.checkStackLimit": {
+          "esbmc.propertyChecking.checkStackLimit": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Check that the stack limit is respected, a value of `-1` indicates that this is not checked",
             "order": 2
           },
-          "esbmc.esbmc.propertyChecking.checkErrorLabel": {
+          "esbmc.propertyChecking.checkErrorLabel": {
             "type": "string",
             "markdownDescription": "Check that a given label is unreachable",
             "order": 3
@@ -544,7 +549,7 @@
             "order": 4
           },
           "esbmc.kinduction.kIncrement": {
-            "type": "boolean",
+            "type": "number",
             "default": 1,
             "markdownDescription": "Set the $k$ increment",
             "order": 5
@@ -570,8 +575,8 @@
         "properties": {
           "esbmc.concurrencyChecking.contextBound": {
             "type": "number",
-            "default": 3,
-            "markdownDescription": "Limit the number of number of context switches for each thread",
+            "default": -1,
+            "markdownDescription": "Limit the number of number of context switches for each thread, `-1` implies no bound.",
             "order": 0
           },
           "esbmc.concurrencyChecking.stateHashing": {
@@ -628,17 +633,24 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "16.x",
     "@types/node-fetch": "^2.6.2",
+    "@types/object-hash": "^2.2.1",
     "@types/vscode": "^1.68.0",
-    "@typescript-eslint/eslint-plugin": "^5.27.0",
-    "@typescript-eslint/parser": "^5.27.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.6",
+    "@typescript-eslint/parser": "^5.30.6",
     "@vscode/test-electron": "^2.1.3",
-    "eslint": "^8.16.0",
+    "eslint": "^8.19.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.4",
+    "eslint-plugin-promise": "^6.0.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
     "typescript": "^4.7.2"
   },
   "dependencies": {
     "@microsoft/vscode-file-downloader-api": "^1.0.1",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "flatten-anything": "^3.0.2",
+    "object-hash": "^3.0.0"
   }
 }
