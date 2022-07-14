@@ -11,7 +11,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-esbmc.verify",
+		"onLanguage:c",
+		"onLanguage:cpp",
+    "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update"
   ],
@@ -609,7 +611,7 @@
     ],
     "commands": [
       {
-        "command": "vscode-esbmc.verify",
+        "command": "vscode-esbmc.verify.file",
         "title": "ESBMC: Verify file"
       },
       {

@@ -1,12 +1,16 @@
 import * as vscode from 'vscode'
 import { ConfigurationParser } from '../parsers/configParser'
+import { Configuration } from '../@types/vscode.configuration'
 
 const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple'])
+const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 /**
  * Takes a path and extracts the file extension.
  */
-export async function run (configParser: ConfigurationParser):Promise<void> {
+export async function run (overides?: Configuration):Promise<void> {
+  // Set overides to empty object if undefined
+  overides = overides || {}
   const activeTextEditor = vscode.window.activeTextEditor
   if (activeTextEditor !== undefined) {
     const currentlyOpenTabfilePath = activeTextEditor.document.fileName
@@ -18,7 +22,7 @@ export async function run (configParser: ConfigurationParser):Promise<void> {
     if (SUPPORTED_EXTENSIONS.has(fileExt!)) {
       let flags: string
       try {
-        flags = configParser.parse()
+        flags = CONFIG_PARSER.parse(overides)
       } catch (error) {
         vscode.window.showErrorMessage(`ESBMC: ${error}`)
         return

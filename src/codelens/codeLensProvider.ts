@@ -1,4 +1,3 @@
-
 import {
   CodeLensProvider,
   TextDocument,
@@ -8,18 +7,14 @@ import {
   commands, Uri
 } from 'vscode'
 
-class EsbmcCodeLensProvider implements CodeLensProvider {
+export class EsbmcCodeLensProvider implements CodeLensProvider {
   async provideCodeLenses (document: TextDocument): Promise<CodeLens[]> {
-    const c: Command = {
-      command: 'vscode-esbmc.verify',
-      title: 'ESBMC: Verify file'
-    }
-
     const uri = Uri.file(document.uri.path.toString())
     let result: any[] = []
     const a = commands.executeCommand('vscode.executeDocumentSymbolProvider', uri)
 
     a.then(function (value: any | undefined) {
+      value = value || []
       value.forEach(function (element: any) {
         // Functions have kind 11
         if (element.kind === 11) {
@@ -28,10 +23,15 @@ class EsbmcCodeLensProvider implements CodeLensProvider {
           const lineEnd = element.location.range._end._line
           const charEnd = element.location.range._end._character
           const pos = new Range(lineStart, charStart, lineEnd, charEnd)
+          const functionName = element.name.split('(')[0]
+          const c: Command = {
+            command: 'vscode-esbmc.verify.function',
+            title: 'ESBMC: Verify function',
+            arguments: [{ bmc: { mainFunction: functionName } }]
+          }
           result = result.concat(new CodeLens(pos, c))
         }
-      }
-      )
+      })
     }, function (reason) {
       console.error(reason)
     })
@@ -40,5 +40,3 @@ class EsbmcCodeLensProvider implements CodeLensProvider {
     return result
   }
 }
-
-export default EsbmcCodeLensProvider
