@@ -8,7 +8,7 @@ const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 /**
  * Takes a path and extracts the file extension.
  */
-export async function run (overides?: Configuration):Promise<void> {
+export async function run (overides?: Configuration, commentFlags?: string):Promise<void> {
   // Set overides to empty object if undefined
   overides = overides || {}
   const activeTextEditor = vscode.window.activeTextEditor
@@ -21,11 +21,16 @@ export async function run (overides?: Configuration):Promise<void> {
     }
     if (SUPPORTED_EXTENSIONS.has(fileExt!)) {
       let flags: string
-      try {
-        flags = CONFIG_PARSER.parse(overides)
-      } catch (error) {
-        vscode.window.showErrorMessage(`ESBMC: ${error}`)
-        return
+      // If comment flags have been passed, use them instead of parsing
+      if (commentFlags !== undefined) {
+        flags = commentFlags
+      } else {
+        try {
+          flags = CONFIG_PARSER.parse(overides)
+        } catch (error) {
+          vscode.window.showErrorMessage(`ESBMC: ${error}`)
+          return
+        }
       }
       const cmd = `esbmc ${currentlyOpenTabfilePath} ${flags}`
       const terminal = vscode.window.createTerminal('ESBMC')
