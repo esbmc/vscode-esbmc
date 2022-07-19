@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { getApi, FileDownloader } from '@microsoft/vscode-file-downloader-api'
-import { executeShellCommand, getInstalledVersion, getLatestVersion } from '../utils/versions'
+import { getInstalledVersion, getLatestVersion } from '../utils/versions'
+import { executeShellCommand } from '../utils/commands'
 import { compare } from 'compare-versions'
 
 // Only want one of this running at a time

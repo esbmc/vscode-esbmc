@@ -26,45 +26,56 @@ export class ConfigurationParser {
     'trace'
   ]
 
-  private cached_hash: string
-  private cached_flags: string
+  private cachedConfigHash: string
+  private cachedOveridesHash: string
+  private cachedFlags: string
   private flags: string[]
   private flatSectionConfig: Configuration
+  private overides: Configuration
 
   public constructor () {
-    this.cached_hash = ''
-    this.cached_flags = ''
+    this.cachedConfigHash = ''
+    this.cachedOveridesHash = ''
+    this.cachedFlags = ''
     this.flags = []
     this.flatSectionConfig = {}
+    this.overides = {}
   }
 
   /**
      * Parses ESBMC settings
      * @returns flags used to run ESBMC
      */
-  public parse (): string {
+  public parse (overides?: Configuration): string {
+    overides = overides || {}
     const workspaceConfig = workspace.getConfiguration(this._root)
-    const hash = sha1(workspaceConfig)
+    const hashConfig = sha1(workspaceConfig)
+    const hashOverides = sha1(overides)
     // Check to see if incoming object hasn't changed and avoid redundant parsing
-    if (hash === this.cached_hash) {
-      return this.cached_flags
+    if (hashConfig === this.cachedConfigHash && hashOverides === this.cachedOveridesHash) {
+      return this.cachedFlags
     }
     this.flags = []
     // Parse each section
     for (const section of this._sections) {
       const sectionConfig = workspaceConfig.inspect<Configuration>(section)
-      const sectionChangedValues = sectionConfig?.globalValue
-      // If sections configurations are all default we will have
-      // undefined section values and should skip
-      if (sectionChangedValues === undefined) {
+      let sectionChangedValues = sectionConfig?.globalValue || {}
+      // If overrides are present that arent in the updated values, add them
+      this.overides = overides
+      if (section in this.overides) {
+        sectionChangedValues = Object.assign(sectionChangedValues, this.overides[section])
+      }
+      // If non of the settings in the sections config have changed, skip
+      if (Object.keys(sectionChangedValues).length === 0) {
         continue
       }
       this.parseSection(sectionChangedValues, section)
     }
     // Store cached values if parsing completes
-    this.cached_hash = hash
-    this.cached_flags = this.flags.join(' ')
-    return this.cached_flags
+    this.cachedConfigHash = hashConfig
+    this.cachedOveridesHash = hashOverides
+    this.cachedFlags = this.flags.join(' ')
+    return this.cachedFlags
   }
 
   /**
@@ -76,7 +87,11 @@ export class ConfigurationParser {
   private parseSection (config: Configuration, section: string): void {
     // Store flattened section config to use in dependent flags
     this.flatSectionConfig = flatten(config)
-    for (const [key, value] of Object.entries(this.flatSectionConfig)) {
+    for (let [key, value] of Object.entries(this.flatSectionConfig)) {
+      // Update setting value if overridden
+      if (key in this.overides) {
+        value = this.overides[key]
+      }
       switch (section) {
         case 'propertyChecking': {
           this.parsePropertyChecking(key, value)
