@@ -16,9 +16,6 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
   if (activeTextEditor !== undefined) {
     const currentlyOpenTabfilePath = activeTextEditor.document.fileName
     const fileExt = path.extname(currentlyOpenTabfilePath)
-    const mainFunction = overides?.bmc?.mainFunction === undefined
-      ? vscode.workspace.getConfiguration('esbmc.bmc').mainFunction
-      : overides?.bmc?.mainFunction
     if (fileExt === undefined) {
       vscode.window.showErrorMessage('ESBMC: Cannot determine file type, not checking')
       return
@@ -38,6 +35,9 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
       }
       const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
       if (workspacePath === undefined) { vscode.window.showErrorMessage('ESBMC: Could not find worspace path') }
+      const mainFunction = overides?.bmc?.mainFunction === undefined
+        ? vscode.workspace.getConfiguration('esbmc.bmc').mainFunction
+        : overides?.bmc?.mainFunction
       const { witnessPath, logPath } = await constructOutputDirs(currentlyOpenTabfilePath, workspacePath, mainFunction)
       const runCommand = `esbmc ${currentlyOpenTabfilePath} ${flags} --witness-output ${witnessPath} --file-output ${logPath}`
       const outputCommand = `cat ${logPath}`
@@ -46,10 +46,40 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
       terminal.sendText(runCommand)
       terminal.sendText(outputCommand)
     } else {
-      vscode.window.showErrorMessage(`ESBMC: Currently no support for .${fileExt}, not checking`)
+      vscode.window.showErrorMessage(`ESBMC: Currently no support for ${fileExt}, not checking`)
     }
   } else {
     vscode.window.showErrorMessage('ESBMC: No file open, not checking')
+  }
+}
+
+export async function runFromCommand () {
+  const func = await vscode.window.showInputBox({
+    title: 'Program',
+    prompt: 'Enter function in open file to verify',
+    placeHolder: 'main'
+  })
+  if (func === undefined) { return }
+  const activeTextEditor = vscode.window.activeTextEditor
+  const uri = activeTextEditor?.document?.uri
+  // Get run commands from codelens as they hold the extra flags too
+  const codelenses: vscode.CodeLens[] = await vscode.commands.executeCommand<vscode.CodeLens[]>('vscode.executeCodeLensProvider', uri)
+  const commands = codelenses.filter((codelens) => {
+    return codelens.command?.arguments?.[0]?.bmc?.mainFunction === func
+  }).map((codelens) => {
+    return codelens?.command
+  })
+  if (commands.length !== 1) {
+    vscode.window.showErrorMessage(`ESBMC: Multiple definitions of ${func}, not checking`)
+  } else if (commands[0] === undefined) {
+    vscode.window.showErrorMessage(`ESBMC: Internal error, no command for ${func}`)
+  } else {
+    const command: vscode.Command = commands[0]
+    await vscode.commands.executeCommand(
+      command.command,
+      command.arguments?.[0],
+      command.arguments?.[1]
+    )
   }
 }
 

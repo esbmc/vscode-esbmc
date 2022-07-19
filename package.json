@@ -14,6 +14,7 @@
 		"onLanguage:c",
 		"onLanguage:cpp",
     "onCommand:vscode-esbmc.verify.file",
+    "onCommand:vscode-esbmc.verify.function",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update"
   ],
@@ -613,6 +614,10 @@
       {
         "command": "vscode-esbmc.verify.file",
         "title": "ESBMC: Verify file"
+      },
+      {
+        "command": "vscode-esbmc.verify.function",
+        "title": "ESBMC: Verify function"
       },
       {
         "command": "vscode-esbmc.install",

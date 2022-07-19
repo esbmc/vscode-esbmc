@@ -25,7 +25,7 @@ export class EsbmcCodeLensProvider implements CodeLensProvider {
 
 function parseDocSymbolsForCodeLens (value: any | undefined, document: TextDocument): any[] {
   value = value || []
-  let result: any[] = []
+  let result: CodeLens[] = []
   let previousFunctionLineEnd = 0
   value.forEach(function (element: any) {
     // Functions have kind 11
@@ -39,7 +39,7 @@ function parseDocSymbolsForCodeLens (value: any | undefined, document: TextDocum
       const commentFlags = checkForEsbmcCommentFlags(document, lineStart, previousFunctionLineEnd)
       const flagArguments = commentFlags === undefined
         ? [{ bmc: { mainFunction: functionName } }]
-        : [{}, `${commentFlags} --function ${functionName}`]
+        : [{ bmc: { mainFunction: functionName } }, `${commentFlags} --function ${functionName}`]
       const command: Command = {
         command: 'vscode-esbmc.verify.function.codelens',
         title: 'ESBMC: Verify function',
