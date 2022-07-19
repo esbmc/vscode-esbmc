@@ -41,7 +41,7 @@ function parseDocSymbolsForCodeLens (value: any | undefined, document: TextDocum
         ? [{ bmc: { mainFunction: functionName } }]
         : [{}, `${commentFlags} --function ${functionName}`]
       const command: Command = {
-        command: 'vscode-esbmc.verify.function',
+        command: 'vscode-esbmc.verify.function.codelens',
         title: 'ESBMC: Verify function',
         arguments: flagArguments
       }
