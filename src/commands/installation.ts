@@ -87,8 +87,8 @@ async function downloadEsbmc (context: vscode.ExtensionContext) {
   downloadingStatusIcon.text = '$(loading~spin) Installing ESBMC '
   downloadingStatusIcon.show()
   const file: vscode.Uri = await fileDownloader.downloadFile(
-    vscode.Uri.parse('https://github.com/esbmc/esbmc/releases/latest/download/ESBMC-Linux.sh'),
-    'ESBMC-Linux.sh',
+    vscode.Uri.parse('https://github.com/esbmc/esbmc/releases/latest/download/ESBMC-Linux.zip'),
+    'ESBMC-Linux.zip',
     context
   )
   return { file, downloadingStatusIcon }
@@ -96,18 +96,21 @@ async function downloadEsbmc (context: vscode.ExtensionContext) {
 
 async function installFile (filePath: string) {
   let out
-  const renameOldCommand = 'mv $HOME/bin/esbmc $HOME/bin/esbmc.old'
-  const makeExecCommand = `chmod +x ${filePath}`
-  const setupInstallLocationCommand = 'mkdir $HOME/bin/esbmc-folder'
-  const installCommand = `${filePath} --skip-license --prefix=$HOME/bin/esbmc-folder`
-  const moveCommand = 'mv $HOME/bin/esbmc-folder/bin/esbmc $HOME/bin'
-  const cleanupCommand = 'rm -rf $HOME/bin/esbmc-folder'
+  const setupBinDirCommand = 'mkdir -p "$HOME/bin"'
+  const renameOldCommand = 'if [ -f "$HOME/bin/esbmc" ]; then mv "$HOME/bin/esbmc" "$HOME/bin/esbmc.old"; fi'
+  const setupInstallLocationCommand = 'rm -rf "$HOME/bin/esbmc-folder" && mkdir -p "$HOME/bin/esbmc-folder"'
+  const unzipCommand = `unzip -o "${filePath}" -d "$HOME/bin/esbmc-folder"`
+  const moveCommand = 'mv "$HOME/bin/esbmc-folder/bin/esbmc" "$HOME/bin/esbmc"'
+  const chmodCommand = 'chmod +x "$HOME/bin/esbmc"'
+  const cleanupCommand = `rm -rf "$HOME/bin/esbmc-folder" "${filePath}"`
+
   try {
+    out = await executeShellCommand(setupBinDirCommand)
     out = await executeShellCommand(renameOldCommand)
-    out = await executeShellCommand(makeExecCommand)
     out = await executeShellCommand(setupInstallLocationCommand)
-    out = await executeShellCommand(installCommand)
+    out = await executeShellCommand(unzipCommand)
     out = await executeShellCommand(moveCommand)
+    out = await executeShellCommand(chmodCommand)
     out = await executeShellCommand(cleanupCommand)
   } catch (error) {
     vscode.window.showInformationMessage(`Could not update ESBMC\n ${out}`)
@@ -115,3 +118,4 @@ async function installFile (filePath: string) {
   }
   return true
 }
+

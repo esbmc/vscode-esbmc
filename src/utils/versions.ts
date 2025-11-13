@@ -8,15 +8,20 @@ export async function getLatestVersion () {
   return redirUrl.split('/').pop()?.replace('v', '')
 }
 
-export async function getInstalledVersion (): Promise<string | undefined> {
-  let out
+export async function getInstalledVersion(): Promise<string | undefined> {
+  let out: string | undefined = undefined;
   try {
-    out = await executeShellCommand('esbmc --version')
-  } catch (error) {
-    return undefined
+    out = await executeShellCommand('$HOME/bin/esbmc --version 2>&1');
+  } catch { /* ignore */ }
+  if (!out) {
+    try {
+      out = await executeShellCommand('esbmc --version 2>&1');
+    } catch {
+      return undefined;
+    }
   }
-  // Extract version number if binary is present
-  const regex = /ESBMC version (\d+\.)?(\d+\.)?(\*|\d+)/g
-  const version = out.match(regex)?.[0].replace('ESBMC version ', '')
-  return version
+  const regex = /ESBMC version (\d+\.)?(\d+\.)?(\*|\d+)/g;
+  const match = out.match(regex)?.[0];
+  if (!match) return undefined;
+  return match.replace('ESBMC version ', '');
 }
