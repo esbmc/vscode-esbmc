@@ -118,4 +118,3 @@ async function installFile (filePath: string) {
   }
   return true
 }
-

@@ -33,11 +33,11 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
           return
         }
       }
-      let esbmcCmd = "esbmc";
+      let esbmcCmd = 'esbmc'
       try {
-        await executeShellCommand("esbmc --version");
+        await executeShellCommand('esbmc --version')
       } catch {
-        esbmcCmd = '"$HOME/bin/esbmc"';
+        esbmcCmd = '$HOME/bin/esbmc'
       }
       const cmd = `${esbmcCmd} ${currentlyOpenTabfilePath} ${flags}`
       const terminal = vscode.window.createTerminal('ESBMC')
