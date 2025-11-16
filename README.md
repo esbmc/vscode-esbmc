@@ -197,6 +197,12 @@ With the extension installed and active:
    ESBMC: Install the latest version
    ```
 
+   If ESBMC is already installed, you could also do the following:
+
+   ````text
+   ESBMC: Update to latest version
+   ````
+
 The extension will automatically download and install the latest ESBMC binary suitable for your Linux environment.
 
 ---
