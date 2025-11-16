@@ -174,7 +174,13 @@ vscode-esbmc-0.0.1.vsix
 2. Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> to open the **Command Palette**.
 3. Run **“Extensions: Install from VSIX…”**.
 4. Navigate to the `.vsix` file you created (e.g. `vscode-esbmc-0.0.1.vsix`) and select it.
-5. After installation, click **“Reload”** (or similar) when prompted, to restart VS Code and activate the extension.
+5. After installation, click **“Reload”** to restart VS Code and activate the extension:
+
+````text
+Open the command palette (Ctrl + Shift + P) and execute the command:
+
+>Reload Window
+````
 
 After reloading, the ESBMC extension will be available for all your projects.
 
