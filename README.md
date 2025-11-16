@@ -75,9 +75,8 @@ You should see version numbers for Node.js and npm without errors.
 Download or clone the ESBMC VS Code extension repository and move into the project folder. For example:
 
 ```bash
-cd ~/vscode-esbmc
-# or, depending on how you obtained it:
-# cd ~/vscode-esbmc
+git clone https://github.com/esbmc/vscode-esbmc.git
+cd vscode-esbmc
 ```
 
 The exact directory name may vary; just ensure you are in the folder that contains `package.json`.
