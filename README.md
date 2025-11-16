@@ -189,7 +189,7 @@ With the extension installed and active:
 2. Look for and run:
 
    ```text
-   ESBMC: Install latest version
+   ESBMC: Install the latest version
    ```
 
 The extension will automatically download and install the latest ESBMC binary suitable for your Linux environment.
@@ -218,7 +218,7 @@ VS Code opens a terminal showing:
 
 ## 12. Summary
 
-By following the steps in this README you can:
+By following the steps in this README, you can:
 
 1. Prepare your Linux environment (curl, git, nvm, Node.js, npm).
 2. Install dependencies and compile the ESBMC VS Code extension (`npm install`, `npm run compile`).
