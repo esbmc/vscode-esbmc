@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { ConfigurationParser } from '../parsers/configParser'
 import { Configuration } from '../@types/vscode.configuration'
+import { executeShellCommand } from '../utils/commands'
 
 const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple'])
 const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
@@ -32,7 +33,13 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
           return
         }
       }
-      const cmd = `esbmc ${currentlyOpenTabfilePath} ${flags}`
+      let esbmcCmd = 'esbmc'
+      try {
+        await executeShellCommand('esbmc --version')
+      } catch {
+        esbmcCmd = '$HOME/bin/esbmc'
+      }
+      const cmd = `${esbmcCmd} ${currentlyOpenTabfilePath} ${flags}`
       const terminal = vscode.window.createTerminal('ESBMC')
       terminal.show()
       terminal.sendText(cmd)
