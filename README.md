@@ -266,6 +266,25 @@ Start the service:
    ```bash
    ollama serve
    ```
+> **Note**  
+> If you see an error such as  
+> `Error: listen tcp 127.0.0.1:11434: bind: address already in use`  
+> it usually means that Ollama is **already running** and listening on port `11434`.
+>
+> You can confirm which process is using this port with:
+>
+> ```bash
+> sudo lsof -i:11434
+> ```
+>
+> And you can check the Ollama service status with:
+>
+> ```bash
+> systemctl status ollama
+> ```
+>
+> If the service is `active (running)`, you can safely skip `ollama serve` and go directly to the verification step below.
+
 
 Verify that it is running:
    ```bash
