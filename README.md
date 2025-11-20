@@ -237,5 +237,87 @@ By following the steps in this README, you can:
 4. Install the `.vsix` into Visual Studio Code.
 5. Use the extension to install ESBMC and verify C/C++ programs, either at the file level or per function.
 
+## 13. (Optional) Local AI Integration with Ollama
+
+This extension now supports **local AI explanations** for ESBMC verification results.  
+The AI is fully offline, running through the **Ollama** framework on Linux.
+
+This feature is optional — you can continue using ESBMC normally without AI.
+
+---
+
+### 🔹 Requirements for AI usage
+
+- Linux (tested on Ubuntu)
+- ESBMC installed through this extension
+- Ollama installed and running
+- A local AI model downloaded (recommended below)
+
+---
+
+### 🔹 Install Ollama
+
+Run in terminal:
+   ```bash
+   curl https://ollama.ai/install.sh | sh
+   ```
+
+Start the service:
+   ```bash
+   ollama serve
+   ```
+
+Verify that it is running:
+   ```bash
+   curl http://localhost:11434/api/tags
+   ```
+
+---
+
+### 🔹 Install the Recommended Model
+
+This extension defaults to the model:  
+`llama3.1:8b`
+
+To install it:
+   ```text
+   ollama pull llama3.1:8b
+   ```
+
+---
+
+### 🔹 How to use AI Verification
+
+Open a C/C++ file in VS Code  
+Press Ctrl + Shift + P  
+Run:  
+`ESBMC: Verify File with Local AI`
+
+The output will include:  
+- ESBMC verification results  
+- A concise AI explanation (English only)  
+- Suggested patch with corrected C code
+
+---
 
 
+---
+
+### 🔹 Troubleshooting Tips
+
+| Symptom                        | Possible cause            | Fix                             |
+|--------------------------------|--------------------------|--------------------------------|
+| [ERROR] Could not contact local AI | Ollama not running        | Run `ollama serve`              |
+| Very slow output               | Model too large for hardware | Try `llama3.1:3b` model        |
+| ESBMC not detected             | PATH misconfiguration    | Re-install ESBMC via extension  |
+
+---
+
+✔ Feature Summary  
+| Feature                          | Status   |
+|---------------------------------|----------|
+| ESBMC Installation              | ✔        |
+| ESBMC Verification inside VS Code |✔      |
+| Local AI-based Analysis using Ollama | NEW ✔ |
+
+Offline AI support helps developers quickly interpret verification failures and apply correct fixes to embedded C code.
