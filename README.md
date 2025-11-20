@@ -246,7 +246,7 @@ This feature is optional — you can continue using ESBMC normally without AI.
 
 ---
 
-### 🔹 Requirements for AI usage
+### Requirements for AI usage
 
 - Linux (tested on Ubuntu)
 - ESBMC installed through this extension
@@ -255,7 +255,7 @@ This feature is optional — you can continue using ESBMC normally without AI.
 
 ---
 
-### 🔹 Install Ollama
+### Install Ollama
 
 Run in terminal:
    ```bash
@@ -274,10 +274,9 @@ Verify that it is running:
 
 ---
 
-### 🔹 Install the Recommended Model
+### Install the Recommended Model
 
-This extension defaults to the model:  
-`llama3.1:8b`
+This extension defaults to the model:  `llama3.1:8b`
 
 To install it:
    ```text
@@ -286,12 +285,11 @@ To install it:
 
 ---
 
-### 🔹 How to use AI Verification
+### How to use AI Verification
 
-Open a C/C++ file in VS Code  
-Press Ctrl + Shift + P  
-Run:  
-`ESBMC: Verify File with Local AI`
+- Open a C/C++ file in VS Code  
+- Press Ctrl + Shift + P  
+- Run: `ESBMC: Verify File with Local AI`
 
 The output will include:  
 - ESBMC verification results  
@@ -300,10 +298,7 @@ The output will include:
 
 ---
 
-
----
-
-### 🔹 Troubleshooting Tips
+### Troubleshooting Tips
 
 | Symptom                        | Possible cause            | Fix                             |
 |--------------------------------|--------------------------|--------------------------------|
@@ -319,5 +314,3 @@ The output will include:
 | ESBMC Installation              | ✔        |
 | ESBMC Verification inside VS Code |✔      |
 | Local AI-based Analysis using Ollama | NEW ✔ |
-
-Offline AI support helps developers quickly interpret verification failures and apply correct fixes to embedded C code.
