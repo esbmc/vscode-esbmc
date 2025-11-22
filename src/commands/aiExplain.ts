@@ -31,7 +31,7 @@ export async function verifyWithAI (): Promise<void> {
   let esbmcOutput: string
   try {
     esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}"`)
-     if (!esbmcOutput || !esbmcOutput.trim()) {
+    if (!esbmcOutput || !esbmcOutput.trim()) {
       esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
     }
   } catch (error: any) {
