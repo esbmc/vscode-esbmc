@@ -30,19 +30,22 @@ export async function verifyWithAI (): Promise<void> {
 
   let esbmcOutput: string
   try {
-    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}"`)
+    // Capture stdout + stderr from ESBMC
+    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
   } catch (error: any) {
     // ESBMC retorna código != 0 quando há violação; ainda assim o output é útil
     esbmcOutput = String(error)
   }
 
-  if (!esbmcOutput.trim()) {
-    vscode.window.showErrorMessage('ESBMC produced empty output.')
-    return
-  }
-
   channel.appendLine('=== ESBMC Output ===\n')
   channel.appendLine(esbmcOutput.trim())
+
+  // Only call AI if ESBMC found a violation
+  const normalizedOutput = esbmcOutput.toUpperCase()
+  if (!normalizedOutput.includes('VERIFICATION FAILED')) {
+    channel.appendLine('\n[INFO] ESBMC verification successful (no failing properties). Skipping AI analysis.\n')
+    return
+  }
 
   const cfg = vscode.workspace.getConfiguration('esbmc.ai')
   const enabled = cfg.get<boolean>('enabled', true)
@@ -92,8 +95,9 @@ Respond in English only.
     aiResponse = await callOllama(prompt)
     channel.appendLine('\n=== AI Analysis (completed) ===\n')
     channel.appendLine(aiResponse.trim())
-  } catch {
+  } catch (err: any) {
     channel.appendLine('\n[ERROR] Could not contact local AI.')
+    channel.appendLine(`\n[ERROR DETAILS]\n${err}\n`)
     vscode.window.showErrorMessage('Local AI unavailable. Ensure Ollama is installed and running (ollama serve).')
   }
 }
