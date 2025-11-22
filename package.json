@@ -607,6 +607,28 @@
             "order": 4
           }
         }
+      },
+      {
+        "id": "ai",
+        "title": "AI Integration",
+        "order": 800,
+        "properties": {
+          "esbmc.ai.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable Local AI explanation using Ollama."
+          },
+          "esbmc.ai.host": {
+            "type": "string",
+            "default": "http://localhost:11434",
+            "description": "Ollama local server URL."
+          },
+          "esbmc.ai.model": {
+            "type": "string",
+            "default": "llama3.1:8b",
+            "description": "Ollama model name used for analysis and explanation."
+          }
+        }
       }
     ],
     "commands": [
@@ -621,6 +643,10 @@
       {
         "command": "vscode-esbmc.update",
         "title": "ESBMC: Update to latest version"
+      },
+      {
+        "command": "vscode-esbmc.verify.file.withAI",
+        "title": "ESBMC: Verify file with Local AI"
       }
     ]
   },
