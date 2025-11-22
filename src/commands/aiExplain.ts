@@ -30,8 +30,10 @@ export async function verifyWithAI (): Promise<void> {
 
   let esbmcOutput: string
   try {
-    // Capture stdout + stderr from ESBMC
-    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
+    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}"`)
+     if (!esbmcOutput || !esbmcOutput.trim()) {
+      esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
+    }
   } catch (error: any) {
     // ESBMC retorna código != 0 quando há violação; ainda assim o output é útil
     esbmcOutput = String(error)
