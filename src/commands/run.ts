@@ -3,7 +3,7 @@ import { ConfigurationParser } from '../parsers/configParser'
 import { Configuration } from '../@types/vscode.configuration'
 import { executeShellCommand } from '../utils/commands'
 
-const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple'])
+const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple', 'py'])
 const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 /**
