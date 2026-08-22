@@ -27,8 +27,8 @@ export async function executeShellCommand (cmd: string): Promise<string> {
  * `cmd.exe` has no such substitution, and leaves the metacharacters it does
  * have alone inside double quotes.
  */
-export function quoteShellArg (value: string): string {
-  if (process.platform === 'win32') {
+export function quoteShellArg (value: string, platform: string = process.platform): string {
+  if (platform === 'win32') {
     return `"${value.replace(/"/g, '')}"`
   }
   return `'${value.replace(/'/g, "'\\''")}'`

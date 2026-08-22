@@ -4,6 +4,25 @@ import * as os from 'os'
 import * as path from 'path'
 import { quoteShellArg, runShellCommand } from '../../utils/commands'
 
+// Quoting must follow the platform it is asked about, not the one the tests
+// run on: extractCommand builds a Linux unzip command on any host.
+describe('quoteShellArg across platforms', () => {
+  it('uses POSIX quoting when asked for a POSIX platform', () => {
+    for (const platform of ['linux', 'darwin']) {
+      assert.strictEqual(quoteShellArg('/a b.c', platform), "'/a b.c'")
+      assert.strictEqual(quoteShellArg('$(id)', platform), "'$(id)'")
+    }
+  })
+
+  it('uses Windows quoting when asked for win32', () => {
+    assert.strictEqual(quoteShellArg('C:\\a b.c', 'win32'), '"C:\\a b.c"')
+  })
+
+  it('escapes an embedded single quote for POSIX', () => {
+    assert.strictEqual(quoteShellArg("it's", 'linux'), "'it'\\''s'")
+  })
+})
+
 // Double quotes do not stop command substitution on POSIX, so a file name is
 // an injection vector wherever it reaches a shell. verifyOnSave makes that
 // reachable by saving a file in a hostile checkout.
