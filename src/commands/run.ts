@@ -10,10 +10,10 @@ import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { SUPPORTED_EXTENSIONS } from '../languages'
 import { resolveEsbmcCommand } from '../utils/esbmcPath'
+import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
 const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
-let OUTPUT: vscode.OutputChannel | undefined
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
 let disposed = false
@@ -22,11 +22,6 @@ let disposed = false
 // diagnostics: a save-triggered run can otherwise overwrite a manual one.
 let runToken = 0
 let killInFlight: (() => void) | undefined
-
-function output (): vscode.OutputChannel {
-  OUTPUT = OUTPUT ?? vscode.window.createOutputChannel('ESBMC')
-  return OUTPUT
-}
 
 function status (): vscode.StatusBarItem {
   if (STATUS === undefined) {
@@ -50,10 +45,9 @@ export function showOutput (): void {
 export function disposeRunState (): void {
   disposed = true
   killInFlight?.()
-  OUTPUT?.dispose()
+  disposeOutput()
   STATUS?.dispose()
   DIAGNOSTICS?.dispose()
-  OUTPUT = undefined
   STATUS = undefined
   DIAGNOSTICS = undefined
 }

@@ -14,6 +14,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - `esbmc.editor.verifyOnSave` verifies a file each time it is saved, and
   `esbmc.editor.timeout` kills a run that takes too long.
 - The verdict is shown in the status bar; clicking it opens the output.
+- `ESBMC: Show current flags` reports the command line the current settings
+  produce, and offers to copy it.
 - A tag-triggered workflow that runs the test matrix, packages the extension
   and publishes it to the VS Code Marketplace and Open VSX, then attaches the
   VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
