@@ -27,6 +27,18 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "solidity",
+        "aliases": [
+          "Solidity",
+          "solidity"
+        ],
+        "extensions": [
+          ".sol"
+        ]
+      }
+    ],
     "configuration": [
       {
         "id": "front-end",
@@ -36,18 +48,21 @@
           "esbmc.frontEnd.includePath": {
             "type": "string",
             "markdownDescription": "Sets include path to a given value",
-            "order": 1
+            "order": 1,
+            "scope": "resource"
           },
           "esbmc.frontEnd.includeAfter": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable system include path to search after system headers, `#esbmc.frontEnd.includePath#` must be set if enabled",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.frontEnd.defineMacros": {
             "type": "string",
             "markdownDescription": "Define preprocessor macro",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           },
           "esbmc.frontEnd.programLoopClaimVcs": {
             "type": "string",
@@ -71,13 +86,15 @@
               "Show the verification conditions (`--show-vcc`)"
             ],
             "markdownDescription": "Stop the front end after a given stage, or show the program's loops, claims or verification conditions instead of verifying it",
-            "order": 4
+            "order": 4,
+            "scope": "resource"
           },
           "esbmc.frontEnd.claimRemoval": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the removal of claims",
-            "order": 5
+            "order": 5,
+            "scope": "resource"
           },
           "esbmc.frontEnd.wordLength": {
             "type": "number",
@@ -93,7 +110,8 @@
               "Treat the machine word as 64 bits wide"
             ],
             "markdownDescription": "Set width of machine word",
-            "order": 6
+            "order": 6,
+            "scope": "resource"
           },
           "esbmc.frontEnd.architecture": {
             "type": "string",
@@ -111,7 +129,8 @@
               "Set Windows/I386 architecture (`--i386-win32`)"
             ],
             "markdownDescription": "Set the machine architecture",
-            "order": 7
+            "order": 7,
+            "scope": "resource"
           },
           "esbmc.frontEnd.endianness": {
             "type": "string",
@@ -127,7 +146,8 @@
               "Allow big-endian word-byte conversions (`--big-endian`)"
             ],
             "markdownDescription": "Sets the endianness for word-byte conversions",
-            "order": 8
+            "order": 8,
+            "scope": "resource"
           },
           "esbmc.frontEnd.printingOptions": {
             "type": "string",
@@ -169,13 +189,15 @@
               "Show the SMT model if the formula is satisfiable; not supported by all solvers (`--smt-model`)"
             ],
             "markdownDescription": "Sets the printing options for the ESBMC frontend",
-            "order": 9
+            "order": 9,
+            "scope": "resource"
           },
           "esbmc.frontEnd.resultOnly": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the printing of the counterexample",
-            "order": 10
+            "order": 10,
+            "scope": "resource"
           }
         }
       },
@@ -241,7 +263,8 @@
             },
             "additionalProperties": false,
             "markdownDescription": "Enable or disable certain trace options",
-            "order": 0
+            "order": 0,
+            "scope": "resource"
           }
         }
       },
@@ -254,84 +277,98 @@
             "type": "string",
             "default": "main",
             "markdownDescription": "Set main function name",
-            "order": 1
+            "order": 1,
+            "scope": "resource"
           },
           "esbmc.bmc.claim": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Only check a specific claim, a value of `-1` indicates checking all claims",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.bmc.instruction": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Limit the number of instructions executed during symbolic execution, a value of `-1` enforces no limit",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           },
           "esbmc.bmc.unwind": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Unwind all loops a given number of times a value of `-1` enforces no limit",
-            "order": 4
+            "order": 4,
+            "scope": "resource"
           },
           "esbmc.bmc.unwindSet": {
             "type": "number",
             "markdownDescription": "Unwind a specific loop a given number of times",
-            "order": 5
+            "order": 5,
+            "scope": "resource"
           },
           "esbmc.bmc.unwindingAssertions": {
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enable or disable the generation of unwinding assertions",
-            "order": 6
+            "order": 6,
+            "scope": "resource"
           },
           "esbmc.bmc.partialUnwinding": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the permision of paths with partial loops",
-            "order": 7
+            "order": 7,
+            "scope": "resource"
           },
           "esbmc.bmc.sliceEquations": {
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enable or disable the removal of unused equations",
-            "order": 8
+            "order": 8,
+            "scope": "resource"
           },
           "esbmc.bmc.initializeNondetVariables": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the initialization of declarations with nondet expression, if it hasn`t a default value",
-            "order": 9
+            "order": 9,
+            "scope": "resource"
           },
           "esbmc.bmc.gotoUnwinding": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or unroll bounded loops at goto level",
-            "order": 10
+            "order": 10,
+            "scope": "resource"
           },
           "esbmc.bmc.sliceAssumes": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the removal of unused assume statements",
-            "order": 11
+            "order": 11,
+            "scope": "resource"
           },
           "esbmc.bmc.incrementalBmc": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the use of incremental loop unwinding verification",
-            "order": 12
+            "order": 12,
+            "scope": "resource"
           },
           "esbmc.bmc.falsification": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the use of incremental loop unwinding for bug searching",
-            "order": 13
+            "order": 13,
+            "scope": "resource"
           },
           "esbmc.bmc.termination": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the use of incremental loop unwinding assertion verification",
-            "order": 14
+            "order": 14,
+            "scope": "resource"
           }
         }
       },
@@ -362,23 +399,27 @@
               "Run an external SMT-LIB solver; set `#esbmc.solver.customSmtSolverPath#` and enable `#esbmc.solver.smtLibFormat#` (`--smtlib --smtlib-solver-prog`)"
             ],
             "markdownDescription": "Sets SMT solver used to model check the program",
-            "order": 1
+            "order": 1,
+            "scope": "resource"
           },
           "esbmc.solver.customSmtSolverPath": {
             "type": "string",
             "markdownDescription": "Sets the program path for the custom SMT solver if `#esbmc.solver.smtSolver#` is set to `custom`",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.solver.smtLibFormat": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable the use of the SMT lib format",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           },
           "esbmc.solver.vccOutput": {
             "type": "string",
             "markdownDescription": "Sets output file for generated VCCs in SMT lib format",
-            "order": 4
+            "order": 4,
+            "scope": "resource"
           },
           "esbmc.solver.arithmetic": {
             "type": "string",
@@ -394,7 +435,8 @@
               "Use the solver with integer/real arithmetic (`--ir`); unbounded ranges overapproximate machine integers and reals, which can significantly boost performance"
             ],
             "markdownDescription": "Sets arithmetic used by the solver",
-            "order": 5
+            "order": 5,
+            "scope": "resource"
           },
           "esbmc.solver.floatingPointEncoding": {
             "type": "string",
@@ -412,7 +454,8 @@
               "Encode floating-point as bit-vectors (`--fp2bv`); the default for solvers without SMT floating-point support"
             ],
             "markdownDescription": "Sets encoding used for floating point numbers",
-            "order": 6
+            "order": 6,
+            "scope": "resource"
           },
           "esbmc.solver.tupleEncoding": {
             "type": "string",
@@ -428,7 +471,8 @@
               "Encode tuples using ESBMC's tuple-to-symbol API (`--tuple-sym-flattener`)"
             ],
             "markdownDescription": "Sets encoding used for tuples",
-            "order": 7
+            "order": 7,
+            "scope": "resource"
           },
           "esbmc.solver.arrayEncoding": {
             "type": "string",
@@ -442,37 +486,43 @@
               "Encode arrays using ESBMC's array API (`--array-flattener`)"
             ],
             "markdownDescription": "Sets encoding used for arrays",
-            "order": 8
+            "order": 8,
+            "scope": "resource"
           },
           "esbmc.solver.returnValueOptimisation": {
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enable or disable return value optimization to compute the stack size",
-            "order": 9
+            "order": 9,
+            "scope": "resource"
           },
           "esbmc.solver.incrementalSmt": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable incremental SMT solving **experimental**",
-            "order": 10
+            "order": 10,
+            "scope": "resource"
           },
           "esbmc.solver.checkThreadGuard": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of the thread guard  during thread exploration **experimental**",
-            "order": 11
+            "order": 11,
+            "scope": "resource"
           },
           "esbmc.solver.checkSymexGuard": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of conditional goto statements during symbolic execution **experimental**",
-            "order": 12
+            "order": 12,
+            "scope": "resource"
           },
           "esbmc.solver.checkSymexAsserts": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of assertion statements during symbolic execution **experimental**",
-            "order": 13
+            "order": 13,
+            "scope": "resource"
           }
         }
       },
@@ -579,19 +629,21 @@
             },
             "additionalProperties": false,
             "markdownDescription": "Enable or disable checking of certain properties",
-            "scope": "window",
+            "scope": "resource",
             "order": 1
           },
           "esbmc.propertyChecking.checkStackLimit": {
             "type": "number",
             "default": -1,
             "markdownDescription": "Check that the stack limit is respected, a value of `-1` indicates that this is not checked",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.propertyChecking.checkErrorLabel": {
             "type": "string",
             "markdownDescription": "Check that a given label is unreachable",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           }
         }
       },
@@ -604,49 +656,57 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of the base case",
-            "order": 0
+            "order": 0,
+            "scope": "resource"
           },
           "esbmc.kinduction.checkForwardCondition": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of the forward condition",
-            "order": 1
+            "order": 1,
+            "scope": "resource"
           },
           "esbmc.kinduction.checkInductiveStep": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable checking of the inductive step",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.kinduction.prove": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable proof by k-induction",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           },
           "esbmc.kinduction.parallelise": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable, running each k-Induction step on a separate process if  `#esbmc.kinduction.parallelise#` is true",
-            "order": 4
+            "order": 4,
+            "scope": "resource"
           },
           "esbmc.kinduction.kIncrement": {
             "type": "number",
             "default": 1,
             "markdownDescription": "Set the $k$ increment",
-            "order": 5
+            "order": 5,
+            "scope": "resource"
           },
           "esbmc.kinduction.iterationMax": {
             "type": "number",
             "default": 50,
             "markdownDescription": "Set the max number of iterations, a value of `-1` indicates `UINT_MAX`",
-            "order": 6
+            "order": 6,
+            "scope": "resource"
           },
           "esbmc.kinduction.bidirectional": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable bidirectional k-induction",
-            "order": 6
+            "order": 6,
+            "scope": "resource"
           }
         }
       },
@@ -659,31 +719,36 @@
             "type": "number",
             "default": -1,
             "markdownDescription": "Limit the number of number of context switches for each thread, `-1` implies no bound.",
-            "order": 0
+            "order": 0,
+            "scope": "resource"
           },
           "esbmc.concurrencyChecking.stateHashing": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable state hashing",
-            "order": 1
+            "order": 1,
+            "scope": "resource"
           },
           "esbmc.concurrencyChecking.partialOrderReduction": {
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enable or disable partial order reduction",
-            "order": 2
+            "order": 2,
+            "scope": "resource"
           },
           "esbmc.concurrencyChecking.gotoMerging": {
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enable or disable merging of GOTOs when restoring last path after a context switch",
-            "order": 3
+            "order": 3,
+            "scope": "resource"
           },
           "esbmc.concurrencyChecking.checkAllInterleavings": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Enable or disable merging of GOTOs when restoring last path after a context switch",
-            "order": 4
+            "order": 4,
+            "scope": "resource"
           }
         }
       },

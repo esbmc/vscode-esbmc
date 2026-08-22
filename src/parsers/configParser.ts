@@ -1,32 +1,16 @@
-import { workspace } from 'vscode'
+import { Uri, workspace } from 'vscode'
 import { sha1 } from 'object-hash'
 import { flatten } from './flatten'
 import { mergeConfigScopes } from './configScopes'
 import { quoteShellArg } from '../utils/commands'
+import { SECTIONS } from './sections'
 
 import { Configuration } from '../@types/vscode.configuration'
 
-export const SECTIONS = [
-  'bmc',
-  'concurrencyChecking',
-  'frontEnd',
-  'kinduction',
-  'propertyChecking',
-  'solver',
-  'trace'
-]
+export { SECTIONS }
 
 export class ConfigurationParser {
   private _root: string = 'esbmc'
-  private _sections = [
-    'bmc',
-    'concurrencyChecking',
-    'frontEnd',
-    'kinduction',
-    'propertyChecking',
-    'solver',
-    'trace'
-  ]
 
   private cachedConfigHash: string
   private cachedOveridesHash: string
@@ -46,11 +30,14 @@ export class ConfigurationParser {
 
   /**
      * Parses ESBMC settings
+     *
+     * @param resource the file being verified. Folder settings only reach
+     * `inspect` when a resource identifies which folder to read them from.
      * @returns flags used to run ESBMC
      */
-  public parse (overides?: Configuration): string {
+  public parse (overides?: Configuration, resource?: Uri): string {
     overides = overides || {}
-    const workspaceConfig = workspace.getConfiguration(this._root)
+    const workspaceConfig = workspace.getConfiguration(this._root, resource)
     const hashConfig = sha1(workspaceConfig)
     const hashOverides = sha1(overides)
     // Check to see if incoming object hasn't changed and avoid redundant parsing
@@ -59,7 +46,7 @@ export class ConfigurationParser {
     }
     this.flags = []
     // Parse each section
-    for (const section of this._sections) {
+    for (const section of SECTIONS) {
       const sectionConfig = workspaceConfig.inspect<Configuration>(section)
       // User, then workspace, then folder: the narrowest scope the user set wins.
       let sectionChangedValues = mergeConfigScopes(

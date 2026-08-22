@@ -10,6 +10,8 @@ function read (file: string): string {
 
 const manifest = JSON.parse(read('package.json'))
 const readme = read('README.md')
+const contributing = read('CONTRIBUTING.md')
+const scripts = Object.keys(manifest.scripts)
 
 const titles: string[] = manifest.contributes.commands.map((c: any) => c.title)
 const editorSettings = Object.keys(
@@ -52,8 +54,30 @@ describe('README', () => {
 
   // The old README walked through a test log that was never in the repository.
   it('references no file that is not in the repository', () => {
-    for (const [, file] of readme.matchAll(/`([\w-]+\.(?:txt|md))`/g)) {
+    for (const [, file] of readme.matchAll(/`([\w./-]+\.(?:txt|md))`/g)) {
       assert.ok(fs.existsSync(path.join(ROOT, file)), `README references missing file ${file}`)
+    }
+  })
+})
+
+// Same drift the README checks guard against: a renamed script leaves the
+// documented command line silently wrong.
+describe('CONTRIBUTING', () => {
+  it('invokes only scripts package.json defines', () => {
+    for (const doc of [contributing, readme]) {
+      const referenced = [
+        ...doc.matchAll(/\bnpm run ([\w:-]+)/g),
+        ...doc.matchAll(/\bnpm (test)\b/g)
+      ]
+      for (const [, script] of referenced) {
+        assert.ok(scripts.includes(script), `the docs run "${script}", which package.json does not define`)
+      }
+    }
+  })
+
+  it('references no file that is not in the repository', () => {
+    for (const [, file] of contributing.matchAll(/`([\w./-]+\.(?:txt|md))`/g)) {
+      assert.ok(fs.existsSync(path.join(ROOT, file)), `CONTRIBUTING references missing file ${file}`)
     }
   })
 })

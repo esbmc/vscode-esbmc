@@ -26,7 +26,12 @@ export async function run (): Promise<void> {
   })
 
   const testsRoot = path.resolve(__dirname, '..')
-  for (const file of testFiles(testsRoot).sort()) {
+  const files = testFiles(testsRoot).sort()
+  // Discovery.test.ts cannot catch a broken walk: it is itself never loaded.
+  if (files.length === 0) {
+    throw new Error(`No test files found under ${testsRoot}.`)
+  }
+  for (const file of files) {
     mocha.addFile(file)
   }
 
