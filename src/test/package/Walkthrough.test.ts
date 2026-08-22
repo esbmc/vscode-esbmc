@@ -6,7 +6,13 @@ import { EXAMPLE_PATH } from '../../commands/examplePath'
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
 
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+// Git checks out CRLF on Windows, which would otherwise break the fenced-code
+// and line-number checks below.
+function read (file: string): string {
+  return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
+}
+
+const manifest = JSON.parse(read(path.join(ROOT, 'package.json')))
 
 interface Step {
   id: string
@@ -24,13 +30,13 @@ const activationEvents: string[] = manifest.activationEvents
 const EXAMPLE = path.join(ROOT, ...EXAMPLE_PATH)
 
 function exampleSource (): string {
-  return fs.readFileSync(EXAMPLE, 'utf8')
+  return read(EXAMPLE)
 }
 
 function media (id: string): string {
   const step = steps.find(s => s.id === id)
   assert.ok(step?.media.markdown, `no markdown media for step ${id}`)
-  return fs.readFileSync(path.join(ROOT, step.media.markdown as string), 'utf8')
+  return read(path.join(ROOT, step.media.markdown as string))
 }
 
 describe('welcome walkthrough', () => {
@@ -45,7 +51,7 @@ describe('welcome walkthrough', () => {
       assert.ok(markdown, `${step.id} has no markdown media`)
       const file = path.join(ROOT, markdown)
       assert.ok(fs.existsSync(file), `${step.id} references missing media ${markdown}`)
-      assert.ok(fs.readFileSync(file, 'utf8').trim(), `${step.id} references empty media ${markdown}`)
+      assert.ok(read(file).trim(), `${step.id} references empty media ${markdown}`)
     }
   })
 
