@@ -8,8 +8,8 @@ import { executeShellCommand, quoteShellArg, runShellCommand } from '../utils/co
 import { parseSarif, resolveFindingPaths, EsbmcFinding } from '../parsers/sarifParser'
 import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
+import { SUPPORTED_EXTENSIONS } from '../languages'
 
-const SUPPORTED_EXTENSIONS = new Set(['c', 'cpp', 'sol', 'jimple', 'py'])
 const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 let OUTPUT: vscode.OutputChannel | undefined

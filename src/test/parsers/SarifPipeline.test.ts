@@ -86,4 +86,18 @@ describe('SARIF pipeline against real ESBMC', function () {
     assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
     assert.strictEqual(fs.existsSync(report), false)
   })
+
+  // Issue #12: the same SARIF pipeline has to work for the non-C languages,
+  // since diagnostics are what makes them usable in the editor.
+  it('produces a finding for a Python program', async () => {
+    const file = path.join(dir, 'fails.py')
+    const report = path.join(dir, 'fails-py.sarif')
+    fs.writeFileSync(file, 'values = [0, 1, 2, 3]\nassert values[0] == 1\n')
+    const result = await runShellCommand(`esbmc "${file}" --sarif-output "${report}"`)
+    assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    assert.ok(findings.length > 0, 'no findings for the Python program')
+    assert.strictEqual(findings[0].file, file)
+    assert.strictEqual(findings[0].line, 2)
+  })
 })

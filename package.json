@@ -13,6 +13,8 @@
   "activationEvents": [
     "onLanguage:c",
     "onLanguage:cpp",
+    "onLanguage:python",
+    "onLanguage:solidity",
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update",

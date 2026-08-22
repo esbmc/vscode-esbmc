@@ -18,6 +18,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Changed
 
 - Verification output goes to an `ESBMC` output channel instead of a terminal.
+- Python and Solidity files now activate the extension and get the function
+  CodeLens. The CodeLens named them `py` and `sol`, which are file extensions
+  rather than VS Code language identifiers, so it never appeared for them.
 
 ### Fixed
 
