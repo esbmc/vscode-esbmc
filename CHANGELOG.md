@@ -70,6 +70,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 
+- Choosing a solver had no effect if a custom solver path was also set: the
+  guard meant to restrict that path to `custom` was written `x || true`, so it
+  was always true and the chosen solver flag was dropped. Selecting `custom`
+  also emitted only `--smtlib-solver-prog`, which names the binary without
+  selecting it, so ESBMC quietly used its own default; and selecting `custom`
+  with no path emitted `--custom`, which is not an ESBMC flag.
+
 - Settings set in a workspace or folder `settings.json` were silently ignored:
   the flag parser read only the user scope, so a per-project unwind bound or
   solver choice did nothing. All three scopes are now read, narrowest winning.
