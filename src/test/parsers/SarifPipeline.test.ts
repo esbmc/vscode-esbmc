@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { parseSarif } from '../../parsers/sarifParser'
+import { parseGraphmlWitness } from '../../parsers/witnessParser'
 import { runShellCommand } from '../../utils/commands'
 
 const FAILS = `int main(void)
@@ -10,6 +11,18 @@ const FAILS = `int main(void)
   int values[4];
   for (int i = 0; i <= 4; i++)
     values[i] = i;
+  return 0;
+}
+`
+
+const NONDET = `extern int nondet_int(void);
+int main(void)
+{
+  int x = nondet_int();
+  int y = nondet_int();
+  if (x > 10 && y < -5) {
+    __ESBMC_assert(x + y != 3, "sum must not be 3");
+  }
   return 0;
 }
 `
@@ -110,6 +123,22 @@ describe('SARIF pipeline against real ESBMC', function () {
     assert.ok(findings.length > 0, 'no findings for the Python program')
     assert.strictEqual(findings[0].file, file)
     assert.strictEqual(findings[0].line, 2)
+  })
+
+  // Issue #18: the trace view needs the witness to carry both the step
+  // locations and the variable values that reach the violation.
+  it('produces a trace with variable values from the witness', async () => {
+    const file = path.join(dir, 'nondet.c')
+    const witness = path.join(dir, 'nondet.graphml')
+    fs.writeFileSync(file, NONDET)
+    const result = await runShellCommand(`esbmc "${file}" --witness-output-graphml "${witness}"`)
+    assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
+    const steps = parseGraphmlWitness(fs.readFileSync(witness, 'utf8'))
+    assert.ok(steps.length > 0, 'the witness produced no steps')
+    assert.ok(steps.every(step => step.file === file), 'steps do not name the source file')
+    const assumptions = steps.flatMap(step => step.assumptions)
+    assert.ok(assumptions.some(a => /^x == /.test(a)), `no value for x in ${JSON.stringify(assumptions)}`)
+    assert.ok(assumptions.some(a => /^y == /.test(a)), `no value for y in ${JSON.stringify(assumptions)}`)
   })
 
   // Solidity needs solc to reach an AST, and ESBMC's Solidity model spins in

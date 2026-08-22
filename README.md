@@ -34,6 +34,9 @@ settings, and reports the result three ways:
   from its log.
 - **Status bar** — the verdict, and how many properties failed. Click it to
   open the full output.
+- **ESBMC Counterexample view** — the steps that reach the violation, each
+  navigating to its line and showing the variable values ESBMC pinned there.
+  It appears in the Explorer once a run produces a trace.
 - **ESBMC output channel** — the command line that ran, and everything ESBMC
   printed.
 

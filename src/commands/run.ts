@@ -8,6 +8,8 @@ import { quoteShellArg, runShellCommand } from '../utils/commands'
 import { parseSarif, resolveFindingPaths, EsbmcFinding } from '../parsers/sarifParser'
 import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
+import { TraceView } from '../diagnostics/traceView'
+import { parseGraphmlWitness, resolveTracePaths, TraceStep } from '../parsers/witnessParser'
 import { SUPPORTED_EXTENSIONS } from '../languages'
 import { resolveEsbmcCommand } from '../utils/esbmcPath'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
@@ -17,6 +19,8 @@ export const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
+let TRACE: TraceView | undefined
+let TRACE_VIEW: vscode.Disposable | undefined
 let disposed = false
 
 // Only the newest run may touch the shared channel, status bar and
@@ -32,6 +36,16 @@ function status (): vscode.StatusBarItem {
     STATUS.command = 'vscode-esbmc.showOutput'
   }
   return STATUS
+}
+
+function trace (): TraceView {
+  if (TRACE === undefined) {
+    TRACE = new TraceView()
+    // Keeping the registration: without disposing it, a second provider ends
+    // up registered for esbmc.trace the next time this runs.
+    TRACE_VIEW = vscode.window.registerTreeDataProvider('esbmc.trace', TRACE)
+  }
+  return TRACE
 }
 
 function diagnostics (): EsbmcDiagnostics {
@@ -55,8 +69,12 @@ export function disposeRunState (): void {
   disposeOutput()
   STATUS?.dispose()
   DIAGNOSTICS?.dispose()
+  TRACE_VIEW?.dispose()
+  TRACE?.dispose()
   STATUS = undefined
   DIAGNOSTICS = undefined
+  TRACE_VIEW = undefined
+  TRACE = undefined
 }
 
 function showStatus (text: string): void {
@@ -109,6 +127,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   if (disposed) { return }
 
   diagnostics().clear()
+  trace().clear()
   showStatus('$(loading~spin) ESBMC: verifying')
   const channel = output()
   // Not cleared: the channel also carries the flag report the user may have
@@ -119,10 +138,11 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   const workingDir = path.dirname(filePath)
   const reportDir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-'))
   const report = path.join(reportDir, 'result.sarif')
+  const witness = path.join(reportDir, 'witness.graphml')
   try {
     let cmd: string
     try {
-      cmd = `${esbmcCmd} ${quoteShellArg(filePath)} ${flags} --sarif-output ${quoteShellArg(report)}`
+      cmd = `${esbmcCmd} ${quoteShellArg(filePath)} ${flags} --sarif-output ${quoteShellArg(report)} --witness-output-graphml ${quoteShellArg(witness)}`
     } catch (error) {
       // A path cmd.exe cannot be given. Refusing is the point; say so rather
       // than verifying whatever the rewritten path names.
@@ -145,6 +165,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
 
     const findings = result.timedOut ? [] : resolveFindingPaths(readFindings(report, channel), workingDir)
     diagnostics().report(findings)
+    trace().show(resolveTracePaths(readTrace(witness, channel), workingDir))
 
     // ESBMC prints its verdict on stderr and only its version banner on stdout.
     showStatus(statusText(classifyVerdict({
@@ -158,6 +179,18 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     }
   } finally {
     fs.rmSync(reportDir, { recursive: true, force: true })
+  }
+}
+
+function readTrace (witness: string, channel: vscode.OutputChannel): TraceStep[] {
+  if (!fs.existsSync(witness)) {
+    return []
+  }
+  try {
+    return parseGraphmlWitness(fs.readFileSync(witness, 'utf8'))
+  } catch (error) {
+    channel.appendLine(`\nESBMC: could not read the counterexample witness (${String(error)})`)
+    return []
   }
 }
 

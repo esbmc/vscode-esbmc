@@ -14,6 +14,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - `esbmc.editor.verifyOnSave` verifies a file each time it is saved, and
   `esbmc.editor.timeout` kills a run that takes too long.
 - The verdict is shown in the status bar; clicking it opens the output.
+- An **ESBMC Counterexample** view lists the steps that reach a violation, each
+  navigating to its line and showing the variable values at that point, read
+  from ESBMC's GraphML witness.
 - `ESBMC: Show current flags` reports the command line the current settings
   produce, and offers to copy it.
 - A tag-triggered workflow that runs the test matrix, packages the extension
