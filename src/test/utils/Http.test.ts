@@ -33,6 +33,10 @@ describe('http', function () {
           res.writeHead(302, { Location: '/loop' })
           return res.end()
         }
+        if (req.url === '/silent') {
+          // Deliberately never answered, to drive the request timeout.
+          return
+        }
         if (req.url === '/boom') {
           res.writeHead(500)
           return res.end('no')
@@ -79,8 +83,20 @@ describe('http', function () {
     assert.strictEqual(await resolveRedirect(`${origin}/final`), `${origin}/final`)
   })
 
-  it('gives up on a redirect loop rather than hanging', async () => {
-    assert.strictEqual(await resolveRedirect(`${origin}/loop`, 3), `${origin}/loop`)
+  // Returning the last url instead would hand getLatestVersion a redirect to
+  // read a version out of, and compare() throws on what it reads.
+  it('rejects a redirect loop rather than reporting where it gave up', async () => {
+    await assert.rejects(
+      resolveRedirect(`${origin}/loop`, 3),
+      /still redirects after 3 hops/
+    )
+  })
+
+  it('rejects when the host accepts the request but never answers', async () => {
+    await assert.rejects(
+      request(`${origin}/silent`, { timeoutMs: 100 }),
+      /No response from .*silent after 100ms/
+    )
   })
 
   it('rejects when the host cannot be reached', async () => {

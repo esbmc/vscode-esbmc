@@ -1,3 +1,5 @@
+import * as path from 'path'
+
 export interface TraceStep {
   file?: string
   line?: number
@@ -83,4 +85,16 @@ export function describeStep (step: TraceStep): string {
     return `enter ${step.enterFunction}`
   }
   return step.line === undefined ? 'step' : `line ${step.line}`
+}
+
+/**
+ * Anchors the witness's `programfile` to the directory ESBMC ran in.
+ *
+ * ESBMC writes the path it was given, so a relative one sends every step to a
+ * file that does not exist from the editor's working directory.
+ */
+export function resolveTracePaths (steps: TraceStep[], base: string): TraceStep[] {
+  return steps.map(step => step.file === undefined || path.isAbsolute(step.file)
+    ? step
+    : { ...step, file: path.resolve(base, step.file) })
 }

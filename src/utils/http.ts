@@ -8,6 +8,8 @@ export interface HttpResponse {
   location?: string
 }
 
+const DEFAULT_TIMEOUT_MS = 30000
+
 function clientFor (url: string): typeof http | typeof https {
   return new URL(url).protocol === 'http:' ? http : https
 }
@@ -22,8 +24,14 @@ function clientFor (url: string): typeof http | typeof https {
  */
 export async function request (
   url: string,
-  options: { method?: string, body?: string, headers?: Record<string, string> } = {}
+  options: {
+    method?: string
+    body?: string
+    headers?: Record<string, string>
+    timeoutMs?: number
+  } = {}
 ): Promise<HttpResponse> {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
   return new Promise<HttpResponse>((resolve, reject) => {
     const headers = { ...options.headers }
     if (options.body !== undefined) {
@@ -42,6 +50,11 @@ export async function request (
         location: response.headers.location
       }))
     })
+    // Without this an unresponsive host holds the install spinner open with no
+    // way for the user to cancel it.
+    call.setTimeout(timeoutMs, () => {
+      call.destroy(new Error(`No response from ${url} after ${timeoutMs}ms`))
+    })
     call.on('error', reject)
     if (options.body !== undefined) {
       call.write(options.body)
@@ -53,6 +66,9 @@ export async function request (
 /**
  * Follows redirects and reports where they land, which is how the latest
  * release version is discovered.
+ *
+ * @throws when the redirects outlast `maxHops`, since the last url reached is
+ * still a redirect and callers would read a version out of it.
  */
 export async function resolveRedirect (url: string, maxHops = 5): Promise<string> {
   let current = url
@@ -63,7 +79,7 @@ export async function resolveRedirect (url: string, maxHops = 5): Promise<string
     }
     current = new URL(response.location, current).toString()
   }
-  return current
+  throw new Error(`${url} still redirects after ${maxHops} hops`)
 }
 
 export async function postJson (url: string, payload: unknown): Promise<HttpResponse> {
