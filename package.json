@@ -53,10 +53,18 @@
               "full-inlining",
               "show-loops",
               "show-claims",
-              "show-vcc",
-              "document-subgoals"
+              "show-vcc"
             ],
-            "markdownDescription": "TODO: Needs description",
+            "markdownEnumDescriptions": [
+              "Run the full verification pipeline without stopping early",
+              "Stop after preprocessing (`--preprocess`)",
+              "Disable inlining of function calls (`--no-inlining`)",
+              "Perform full inlining of function calls (`--full-inlining`)",
+              "Show the loops in the program (`--show-loops`)",
+              "Only show the claims generated for the program (`--show-claims`)",
+              "Show the verification conditions (`--show-vcc`)"
+            ],
+            "markdownDescription": "Stop the front end after a given stage, or show the program's loops, claims or verification conditions instead of verifying it",
             "order": 4
           },
           "esbmc.frontEnd.claimRemoval": {
@@ -73,6 +81,11 @@
               32,
               64
             ],
+            "markdownEnumDescriptions": [
+              "Treat the machine word as 16 bits wide (`--16`)",
+              "Treat the machine word as 32 bits wide (`--32`)",
+              "Treat the machine word as 64 bits wide"
+            ],
             "markdownDescription": "Set width of machine word",
             "order": 6
           },
@@ -85,6 +98,12 @@
               "i386-linux",
               "i386-win32"
             ],
+            "markdownEnumDescriptions": [
+              "Set MACOS/I386 architecture (`--i386-macos`)",
+              "Set PPC/I386 architecture (`--ppc-macos`)",
+              "Set Linux/I386 architecture",
+              "Set Windows/I386 architecture (`--i386-win32`)"
+            ],
             "markdownDescription": "Set the machine architecture",
             "order": 7
           },
@@ -95,6 +114,11 @@
               "auto",
               "little-endian",
               "big-endian"
+            ],
+            "markdownEnumDescriptions": [
+              "Take the endianness from the selected architecture",
+              "Allow little-endian word-byte conversions (`--little-endian`)",
+              "Allow big-endian word-byte conversions (`--big-endian`)"
             ],
             "markdownDescription": "Sets the endianness for word-byte conversions",
             "order": 8
@@ -119,6 +143,24 @@
               "smt-formula-only",
               "smt-formula-too",
               "smt-model"
+            ],
+            "markdownEnumDescriptions": [
+              "Verify the program without dumping any intermediate representation",
+              "Only show the symbol table (`--symbol-table-only`)",
+              "Show the symbol table and verify (`--symbol-table-too`)",
+              "Only show the parse tree (`--parse-tree-only`)",
+              "Show the parse tree and verify (`--parse-tree-too`)",
+              "Only show the GOTO program (`--goto-functions-only`)",
+              "Show the GOTO program and verify (`--goto-functions-too`)",
+              "Only show the program expression (`--program-only`)",
+              "Show the program expression and verify (`--program-too`)",
+              "Show the symbol table along with the SSA (`--ssa-symbol-table`)",
+              "Print guard expressions in the SSA output (`--ssa-guards`)",
+              "Print the sliced SSAs (`--ssa-sliced`)",
+              "Omit location info from the SSA output (`--ssa-no-location`)",
+              "Only show the SMT formula; not supported by all solvers (`--smt-formula-only`)",
+              "Show the SMT formula and verify; not supported by all solvers (`--smt-formula-too`)",
+              "Show the SMT model if the formula is satisfiable; not supported by all solvers (`--smt-model`)"
             ],
             "markdownDescription": "Sets the printing options for the ESBMC frontend",
             "order": 9
@@ -304,6 +346,15 @@
               "bitwuzla",
               "custom"
             ],
+            "markdownEnumDescriptions": [
+              "Use Boolector",
+              "Use Z3 (`--z3`)",
+              "Use MathSAT (`--mathsat`)",
+              "Use CVC (`--cvc`); currently an alias for CVC4",
+              "Use Yices (`--yices`)",
+              "Use Bitwuzla (`--bitwuzla`); the solver ESBMC itself falls back to",
+              "Run an external SMT-LIB solver; set `#esbmc.solver.customSmtSolverPath#` and enable `#esbmc.solver.smtLibFormat#` (`--smtlib --smtlib-solver-prog`)"
+            ],
             "markdownDescription": "Sets SMT solver used to model check the program",
             "order": 1
           },
@@ -331,6 +382,11 @@
               "bv",
               "ir"
             ],
+            "markdownEnumDescriptions": [
+              "Let the solver choose its arithmetic encoding",
+              "Use the solver with bit-vector arithmetic (`--bv`)",
+              "Use the solver with integer/real arithmetic (`--ir`); unbounded ranges overapproximate machine integers and reals, which can significantly boost performance"
+            ],
             "markdownDescription": "Sets arithmetic used by the solver",
             "order": 5
           },
@@ -343,6 +399,12 @@
               "fixedbv",
               "fp2bv"
             ],
+            "markdownEnumDescriptions": [
+              "Let ESBMC choose the floating-point encoding",
+              "Encode floating-point using the SMT floating-point theory (`--floatbv`); ESBMC's default encoding",
+              "Encode floating-point as fixed bit-vectors (`--fixedbv`)",
+              "Encode floating-point as bit-vectors (`--fp2bv`); the default for solvers without SMT floating-point support"
+            ],
             "markdownDescription": "Sets encoding used for floating point numbers",
             "order": 6
           },
@@ -354,6 +416,11 @@
               "node-flattener",
               "sym-flattener"
             ],
+            "markdownEnumDescriptions": [
+              "Let ESBMC choose the tuple encoding",
+              "Encode tuples using ESBMC's tuple-to-node API (`--tuple-node-flattener`)",
+              "Encode tuples using ESBMC's tuple-to-symbol API (`--tuple-sym-flattener`)"
+            ],
             "markdownDescription": "Sets encoding used for tuples",
             "order": 7
           },
@@ -363,6 +430,10 @@
             "enum": [
               "auto",
               "flattener"
+            ],
+            "markdownEnumDescriptions": [
+              "Let ESBMC choose the array encoding",
+              "Encode arrays using ESBMC's array API (`--array-flattener`)"
             ],
             "markdownDescription": "Sets encoding used for arrays",
             "order": 8
