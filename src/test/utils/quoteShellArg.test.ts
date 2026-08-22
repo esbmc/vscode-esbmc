@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { quoteShellArg, runShellCommand } from '../../utils/commands'
+import { quoteShellArg, runShellCommand, splitShellArgs } from '../../utils/commands'
 
 // Quoting must follow the platform it is asked about, not the one the tests
 // run on: extractCommand builds a Linux unzip command on any host.
@@ -68,5 +68,67 @@ describe('quoteShellArg', function () {
   it('leaves a command substitution intact as literal text', async () => {
     const result = await runShellCommand(`printf %s ${quoteShellArg('$(echo hi)')}`)
     assert.strictEqual(result.stdout, '$(echo hi)')
+  })
+})
+
+// ESBMC flags arrive as one string, from settings or from MCP agent input, and
+// are re-quoted token by token before reaching a shell.
+describe('splitShellArgs', () => {
+  it('splits on whitespace', () => {
+    assert.deepStrictEqual(splitShellArgs('--unwind 10 --overflow-check'), ['--unwind', '10', '--overflow-check'])
+  })
+
+  it('reports nothing for an empty or blank string', () => {
+    assert.deepStrictEqual(splitShellArgs(''), [])
+    assert.deepStrictEqual(splitShellArgs('   \t '), [])
+  })
+
+  it('keeps a quoted value together and drops the quotes', () => {
+    assert.deepStrictEqual(splitShellArgs('--claim "two words"'), ['--claim', 'two words'])
+    assert.deepStrictEqual(splitShellArgs("--claim 'two words'"), ['--claim', 'two words'])
+  })
+
+  it('keeps an empty quoted argument', () => {
+    assert.deepStrictEqual(splitShellArgs('--claim ""'), ['--claim', ''])
+  })
+
+  it('leaves a Windows path alone', () => {
+    assert.deepStrictEqual(splitShellArgs('--include C:\\a\\b'), ['--include', 'C:\\a\\b'])
+  })
+
+  it('holds a separator inside its token instead of ending the command', () => {
+    assert.deepStrictEqual(splitShellArgs('--unwind 1; rm -rf x'), ['--unwind', '1;', 'rm', '-rf', 'x'])
+  })
+})
+
+// The composition is what makes hostile flags safe: split groups the tokens,
+// quoting neutralises what is inside each one.
+describe('splitShellArgs with quoteShellArg', function () {
+  this.timeout(60000)
+
+  let dir: string
+
+  before(function () {
+    if (process.platform === 'win32') {
+      this.skip()
+    }
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-split-'))
+  })
+
+  after(() => {
+    if (dir !== undefined) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('runs no command smuggled in through a flag string', async () => {
+    for (const shape of ['; touch MARKER', '&& touch MARKER', '$(touch MARKER)', '`touch MARKER`']) {
+      const marker = path.join(dir, `pwned-${shape.replace(/\W/g, '')}`)
+      const flags = splitShellArgs(shape.replace('MARKER', marker))
+        .map(flag => quoteShellArg(flag))
+        .join(' ')
+      await runShellCommand(`printf %s ${flags}`)
+      assert.strictEqual(fs.existsSync(marker), false, `${shape} ran`)
+    }
   })
 })

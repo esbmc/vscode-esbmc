@@ -1,5 +1,15 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import { McpStdioServer } from './protocol'
 import { EsbmcNotFoundError, VerifyResult, verifyFile } from '../verify'
+
+// out/mcp/server.js -> the extension root. The server runs outside VS Code, so
+// there is no extension context to read the manifest from.
+const MANIFEST = path.join(__dirname, '..', '..', 'package.json')
+
+export function serverVersion (): string {
+  return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).version
+}
 
 /** What an agent gets back, kept stable and independent of ESBMC's log format. */
 export function describeResult (file: string, result: VerifyResult): string {
@@ -44,7 +54,7 @@ export function describeResult (file: string, result: VerifyResult): string {
 }
 
 export function createServer (): McpStdioServer {
-  const server = new McpStdioServer({ name: 'esbmc', version: '0.1.0' })
+  const server = new McpStdioServer({ name: 'esbmc', version: serverVersion() })
 
   server.tool(
     {

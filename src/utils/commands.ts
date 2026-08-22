@@ -34,6 +34,44 @@ export function quoteShellArg (value: string, platform: string = process.platfor
   return `'${value.replace(/'/g, "'\\''")}'`
 }
 
+/**
+ * Splits a command line into the arguments a shell would group it into,
+ * honouring quotes but leaving every other metacharacter inside its token.
+ *
+ * Callers re-quote each argument with quoteShellArg, so a value carrying
+ * `;`, `&&` or `$(...)` ends up as one literal ESBMC flag rather than a
+ * command of its own. Backslashes are left alone, so Windows paths survive.
+ */
+export function splitShellArgs (value: string): string[] {
+  const args: string[] = []
+  let current = ''
+  let started = false
+  let quote: string | undefined
+
+  for (const char of value) {
+    if (quote === undefined && /\s/.test(char)) {
+      if (started) {
+        args.push(current)
+        current = ''
+        started = false
+      }
+      continue
+    }
+    started = true
+    if (quote === undefined && (char === "'" || char === '"')) {
+      quote = char
+    } else if (char === quote) {
+      quote = undefined
+    } else {
+      current += char
+    }
+  }
+  if (started) {
+    args.push(current)
+  }
+  return args
+}
+
 export interface CommandResult {
   stdout: string
   stderr: string
