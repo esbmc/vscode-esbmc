@@ -11,6 +11,12 @@ env:
   VSCE: '@vscode/vsce@3.9.2'
   OVSX: 'ovsx@1.1.1'
 
+# A second tag must not cancel a publish that is mid-flight: the VSIX may
+# already be on one registry and not the other.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     uses: ./.github/workflows/test.yml
