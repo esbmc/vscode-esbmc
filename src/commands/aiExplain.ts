@@ -3,6 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { executeShellCommand, quoteShellArg, runShellCommand } from '../utils/commands'
 import { callOllama } from '../ai/ollamaClient'
+import { editorTimeoutSeconds } from './run'
 
 export async function verifyWithAI (): Promise<void> {
   const editor = vscode.window.activeTextEditor
@@ -24,15 +25,30 @@ export async function verifyWithAI (): Promise<void> {
 
   // Try ESBMC, fallback to $HOME/bin
   let esbmcCmd = 'esbmc'
+  let cmd: string
   try {
-    await executeShellCommand('esbmc --version')
-  } catch {
-    esbmcCmd = quoteShellArg(path.join(os.homedir(), 'bin', 'esbmc'))
+    try {
+      await executeShellCommand('esbmc --version')
+    } catch {
+      esbmcCmd = quoteShellArg(path.join(os.homedir(), 'bin', 'esbmc'))
+    }
+    cmd = `${esbmcCmd} ${quoteShellArg(filePath)}`
+  } catch (error) {
+    channel.appendLine(`ESBMC: ${String(error)}`)
+    vscode.window.showErrorMessage(`ESBMC: ${String(error)}`)
+    return
   }
 
   // ESBMC prints its verdict on stderr and exits non-zero on a violation, so
   // both streams are kept and a non-zero exit is a result, not an error.
-  const result = await runShellCommand(`${esbmcCmd} ${quoteShellArg(filePath)}`)
+  // Bounded by the same setting a normal run uses: without it a
+  // non-terminating program leaves this waiting forever.
+  const timeoutSeconds = editorTimeoutSeconds()
+  const result = await runShellCommand(cmd, { timeoutMs: timeoutSeconds * 1000 })
+  if (result.timedOut) {
+    channel.appendLine(`\n[INFO] ESBMC was killed after ${timeoutSeconds}s (esbmc.editor.timeout)\n`)
+    return
+  }
   const esbmcOutput = result.stdout + result.stderr
 
   channel.appendLine('=== ESBMC Output ===\n')
