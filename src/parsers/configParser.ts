@@ -1,6 +1,6 @@
 import { workspace } from 'vscode'
 import { sha1 } from 'object-hash'
-import { flatten } from 'flatten-anything'
+import { flatten } from './flatten'
 
 import { Configuration } from '../@types/vscode.configuration'
 
