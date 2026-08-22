@@ -44,5 +44,5 @@ export function extractCommand (zip: string, destination: string, platform: stri
     return 'powershell -NoProfile -NonInteractive -Command ' +
       `"Expand-Archive -Force -LiteralPath ${literal(zip)} -DestinationPath ${literal(destination)}"`
   }
-  return `unzip -o ${quoteShellArg(zip)} -d ${quoteShellArg(destination)}`
+  return `unzip -o ${quoteShellArg(zip, platform)} -d ${quoteShellArg(destination, platform)}`
 }
