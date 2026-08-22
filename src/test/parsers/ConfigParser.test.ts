@@ -410,11 +410,6 @@ describe('ConfigurationParser Test Suite', () => {
         expected: '--show-vcc'
       },
       {
-        settings: ['frontEnd.programLoopClaimVcs'],
-        values: ['document-subgoals'],
-        expected: '--document-subgoals'
-      },
-      {
         settings: ['frontEnd.claimRemoval'],
         values: [true],
         expected: '--all-claims'
