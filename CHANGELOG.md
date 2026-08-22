@@ -27,6 +27,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- `node-fetch` and `flatten-anything` are gone. Both became ESM-only in their
+  next major and cannot be `require`d from this extension, which compiles to
+  CommonJS, so Dependabot could only ever offer updates that break the build.
+  Two HTTP calls now go through Node's own `http`/`https`, and the settings
+  flattener is fifteen lines pinned by tests recorded from the old dependency.
+
 - The README is now a description of what the extension does rather than a
   build-from-source walkthrough, with the build, test and release instructions
   moved to `CONTRIBUTING.md`. It no longer walks the reader through a test log
