@@ -1,0 +1,51 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  # Pinned: an unpinned npx resolves the newest release at run time, so a
+  # breaking one would break releases with no change here.
+  VSCE: '@vscode/vsce@3.9.2'
+  OVSX: 'ovsx@1.1.1'
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: npm
+    - run: npm ci
+    - name: Check the tag matches package.json
+      run: |
+        tag="${GITHUB_REF_NAME#v}"
+        version="$(node -p "require('./package.json').version")"
+        if [ "$tag" != "$version" ]; then
+          echo "tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+          exit 1
+        fi
+    - name: Package
+      run: npx --yes "$VSCE" package --out vscode-esbmc.vsix
+    - name: Publish to the VS Code Marketplace
+      run: npx --yes "$VSCE" publish --packagePath vscode-esbmc.vsix
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    - name: Publish to Open VSX
+      run: npx --yes "$OVSX" publish vscode-esbmc.vsix
+      env:
+        OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    - name: Attach the VSIX to the release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: vscode-esbmc.vsix

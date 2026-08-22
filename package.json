@@ -2,24 +2,27 @@
   "name": "vscode-esbmc",
   "displayName": "ESBMC",
   "description": "Verify C and C++ programs from VS Code with ESBMC, the Efficient SMT-based Bounded Model Checker",
-  "publisher": "jossmoff",
+  "publisher": "esbmc",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.68.0"
   },
   "categories": [
+    "Testing",
+    "Linters",
+    "Programming Languages",
     "Other"
   ],
   "activationEvents": [
     "onLanguage:c",
     "onLanguage:cpp",
-    "onLanguage:python",
-    "onLanguage:solidity",
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update",
-    "onCommand:vscode-esbmc.showOutput",
-    "onCommand:vscode-esbmc.openExample"
+    "onCommand:vscode-esbmc.openExample",
+    "onLanguage:python",
+    "onLanguage:solidity",
+    "onCommand:vscode-esbmc.showOutput"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -756,12 +759,12 @@
         "title": "ESBMC: Verify file with Local AI"
       },
       {
-        "command": "vscode-esbmc.showOutput",
-        "title": "ESBMC: Show output"
-      },
-      {
         "command": "vscode-esbmc.openExample",
         "title": "ESBMC: Open example program"
+      },
+      {
+        "command": "vscode-esbmc.showOutput",
+        "title": "ESBMC: Show output"
       }
     ],
     "walkthroughs": [
@@ -824,7 +827,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "test:package": "mocha --ui bdd out/test/package/**/*.test.js"
   },
   "extensionDependencies": [
     "mindaro-dev.file-downloader"
@@ -862,6 +866,24 @@
       "serialize-javascript": "^7.1.0"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/esbmc/vscode-esbmc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/esbmc/vscode-esbmc/issues"
+  },
+  "homepage": "http://esbmc.org/",
+  "keywords": [
+    "esbmc",
+    "bounded model checking",
+    "formal verification",
+    "static analysis",
+    "c",
+    "c++",
+    "solidity",
+    "python"
+  ],
   "extensionKind": [
     "workspace"
   ]

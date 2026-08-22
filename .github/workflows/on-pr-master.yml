@@ -5,13 +5,17 @@ on:
     branches:
       - master
 
+env:
+  # Pinned: an unpinned npx resolves the newest release at run time, so a
+  # breaking one would break packaging with no change here.
+  VSCE: '@vscode/vsce@3.9.2'
+
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    uses: ./.github/workflows/test.yml
+
+  package:
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -21,7 +25,13 @@ jobs:
         node-version: 22.x
         cache: npm
     - run: npm ci
-    - run: xvfb-run -a npm test
-      if: runner.os == 'Linux'
-    - run: npm test
-      if: runner.os != 'Linux'
+    # Catches a broken manifest or a .vscodeignore that drops shipped assets
+    # before a release tag does.
+    - run: npx --yes "$VSCE" package --out vscode-esbmc.vsix
+    - name: Check the walkthrough assets are packaged
+      # Read out of the archive rather than asking vsce to list what it would
+      # package: only the archive is what ships.
+      run: |
+        unzip -Z1 vscode-esbmc.vsix > packaged.txt
+        grep -qx "extension/examples/buffer-overflow.c" packaged.txt
+        grep -qx "extension/walkthroughs/install.md" packaged.txt

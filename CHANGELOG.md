@@ -14,6 +14,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - `esbmc.editor.verifyOnSave` verifies a file each time it is saved, and
   `esbmc.editor.timeout` kills a run that takes too long.
 - The verdict is shown in the status bar; clicking it opens the output.
+- A tag-triggered workflow that runs the test matrix, packages the extension
+  and publishes it to the VS Code Marketplace and Open VSX, then attaches the
+  VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
+- Pull requests now package the extension as well as testing it, and check
+  that the walkthrough assets are still included.
 
 ### Changed
 
@@ -29,6 +34,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Python and Solidity files now activate the extension and get the function
   CodeLens. The CodeLens named them `py` and `sol`, which are file extensions
   rather than VS Code language identifiers, so it never appeared for them.
+- Marketplace metadata: `repository`, `bugs`, `homepage`, `keywords`, and
+  categories widened from `Other` to Testing, Linters and Programming
+  Languages. The publisher is now `esbmc` rather than a personal account.
+- A `.vscodeignore` keeps sources, tests and repository plumbing out of the
+  VSIX, which drops it from 492 to 406 files.
 
 ### Fixed
 
