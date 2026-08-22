@@ -12,7 +12,9 @@ import { describeFlags } from '../parsers/flagReport'
 export async function showFlags (): Promise<void> {
   let flags: string
   try {
-    flags = CONFIG_PARSER.parse()
+    // Folder settings are read relative to a file, so report the flags for the
+    // one in front of the user.
+    flags = CONFIG_PARSER.parse(undefined, vscode.window.activeTextEditor?.document.uri)
   } catch (error) {
     vscode.window.showErrorMessage(`ESBMC: ${String(error)}`)
     return
