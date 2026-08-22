@@ -1,5 +1,6 @@
 import { Request, default as fetch } from 'node-fetch'
-import { executeShellCommand } from './commands'
+import { runShellCommand } from './commands'
+import { resolveEsbmcCommand } from './esbmcPath'
 
 export async function getLatestVersion () {
   const request = new Request('https://github.com/esbmc/esbmc/releases/latest')
@@ -9,19 +10,15 @@ export async function getLatestVersion () {
 }
 
 export async function getInstalledVersion (): Promise<string | undefined> {
-  let out
-  try {
-    out = await executeShellCommand('$HOME/bin/esbmc --version 2>&1')
-  } catch (error) { }
-  if (!out) {
-    try {
-      out = await executeShellCommand('esbmc --version 2>&1')
-    } catch (error) {
-      return undefined
-    }
+  const esbmc = await resolveEsbmcCommand()
+  if (esbmc === undefined) {
+    return undefined
   }
+  // ESBMC prints its banner on stderr, and exits non-zero on some platforms
+  // when given only --version, so both streams are kept.
+  const result = await runShellCommand(`${esbmc} --version`)
   const regex = /ESBMC version (\d+\.)?(\d+\.)?(\*|\d+)/g
-  const match = out.match(regex)?.[0]
+  const match = (result.stdout + result.stderr).match(regex)?.[0]
   if (!match) {
     return undefined
   }

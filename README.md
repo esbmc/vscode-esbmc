@@ -8,9 +8,9 @@ This README explains how to go from the extension source code to a working ESBMC
 
 The ESBMC VS Code extension allows you to:
 
-- Run ESBMC on the **current C/C++ file** directly from the editor.
-- Install (download + unpack) the **latest ESBMC** binary on Linux using a dedicated command.
-- See ESBMC results in the integrated VS Code terminal.
+- Run ESBMC on the **current C, C++, Python or Solidity file** directly from the editor.
+- Install (download + unpack) the **latest ESBMC** binary on Linux, macOS or Windows using a dedicated command.
+- See violated properties as squiggles in the editor and in the Problems panel, with the raw ESBMC output in an `ESBMC` output channel.
 
 Once the extension is installed, **Help → Welcome → Get started with ESBMC**
 walks through installing ESBMC, opening the bundled `examples/buffer-overflow.c`
@@ -24,7 +24,7 @@ This document assumes you are using a Debian/Ubuntu-based distribution and the *
 
 Before building and using the extension, make sure you have:
 
-- **Linux** (tested on Ubuntu-based systems).
+- **Linux**, **macOS** or **Windows**. The build instructions below were written on Ubuntu; the packaged extension runs on all three.
 - **Visual Studio Code** installed.
 - **curl** and **git** (for downloads and version control).
 - **unzip** installed on your system (required for automatic ESBMC installation).
@@ -205,17 +205,17 @@ With the extension installed and active:
    ESBMC: Update to latest version
    ````
 
-The extension will automatically download and install the latest ESBMC binary suitable for your Linux environment.
+The extension downloads the release asset for your platform (`esbmc-linux.zip`, `esbmc-macos.zip` or `esbmc-windows.zip`) and unpacks it into its own storage directory, so nothing is written to `$HOME/bin` and no `PATH` change is needed.
 
 ---
 
 ## 10. Step 8 – Using the extension
 
-### 10.1 Verify a C/C++ file
+### 10.1 Verify a file
 
 According to `Teste_ESBMC.txt`, this workflow was successfully tested:
 
-1. Open a C or C++ source file in VS Code.
+1. Open a C, C++, Python or Solidity source file in VS Code.
 2. Open the **Command Palette** (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
 3. Run:
 
@@ -223,11 +223,24 @@ According to `Teste_ESBMC.txt`, this workflow was successfully tested:
    ESBMC: Verify file
    ```
 
-VS Code opens a terminal showing:
+VS Code opens an **ESBMC** output channel showing the command line and the
+full ESBMC output, and reports the verdict in the status bar. Any violated
+property also appears as a squiggle on its line and in the **Problems** panel.
 
-- the ESBMC command line,
-- verification progress,
-- and the final result.
+Two settings control this:
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `esbmc.editor.verifyOnSave` | `false` | Verify a supported file every time it is saved |
+| `esbmc.editor.timeout` | `60` | Kill a run after this many seconds; `0` waits indefinitely |
+
+## 11.1 Running against a remote machine
+
+The extension is marked `extensionKind: ["workspace"]`, so with **Remote-SSH**,
+**WSL** or **Dev Containers** it runs where the code is rather than on the
+local UI host. ESBMC is then installed and executed on the remote machine,
+which is the supported route if you want a Linux ESBMC while working from a
+Windows or macOS desktop.
 
 ## 11.2 Releasing
 
@@ -251,7 +264,7 @@ By following the steps in this README, you can:
 2. Install dependencies and compile the ESBMC VS Code extension (`npm install`, `npm run compile`).
 3. Package the extension as a `.vsix` file with `vsce package`.
 4. Install the `.vsix` into Visual Studio Code.
-5. Use the extension to install ESBMC and verify C/C++ programs, either at the file level or per function.
+5. Use the extension to install ESBMC and verify C, C++, Python and Solidity programs, either at the file level or per function.
 
 ## 13. (Optional) Local AI Integration with Ollama
 
@@ -264,7 +277,7 @@ This feature is optional — you can continue using ESBMC normally without AI.
 
 ### Requirements for AI usage
 
-- Linux (tested on Ubuntu)
+- Linux (tested on Ubuntu), macOS and Windows
 - ESBMC installed through this extension
 - Ollama installed and running
 - A local AI model downloaded (recommended below)
@@ -322,7 +335,7 @@ To install it:
 
 ### How to use AI Verification
 
-- Open a C/C++ file in VS Code  
+- Open a C, C++, Python or Solidity file in VS Code  
 - Press Ctrl + Shift + P  
 - Run: `ESBMC: Verify File with Local AI`
 

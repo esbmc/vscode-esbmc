@@ -19,7 +19,10 @@
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update",
-    "onCommand:vscode-esbmc.openExample"
+    "onCommand:vscode-esbmc.openExample",
+    "onLanguage:python",
+    "onLanguage:solidity",
+    "onCommand:vscode-esbmc.showOutput"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -704,6 +707,26 @@
             "description": "Ollama model name used for analysis and explanation."
           }
         }
+      },
+      {
+        "id": "editor",
+        "title": "Editor Integration",
+        "order": 900,
+        "properties": {
+          "esbmc.editor.verifyOnSave": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Verify a supported file with ESBMC every time it is saved",
+            "order": 1
+          },
+          "esbmc.editor.timeout": {
+            "type": "number",
+            "default": 60,
+            "markdownDescription": "Kill a verification run after this many seconds, a value of `0` lets it run to completion",
+            "order": 2,
+            "minimum": 0
+          }
+        }
       }
     ],
     "commands": [
@@ -726,6 +749,10 @@
       {
         "command": "vscode-esbmc.openExample",
         "title": "ESBMC: Open example program"
+      },
+      {
+        "command": "vscode-esbmc.showOutput",
+        "title": "ESBMC: Show output"
       }
     ],
     "walkthroughs": [
@@ -844,5 +871,8 @@
     "c++",
     "solidity",
     "python"
+  ],
+  "extensionKind": [
+    "workspace"
   ]
 }
