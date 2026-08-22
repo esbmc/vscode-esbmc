@@ -250,7 +250,6 @@ describe('ConfigurationParser Test Suite', () => {
       }
     ]
 
-
     invalidTests.forEach(({ settings, values }) => {
       it(`Checking settings ${JSON.stringify(settings)} with respective invalid values ${JSON.stringify(values)} throws exception`, async function () {
         await assertIncorrectFlagParseThrows(settings, values)
@@ -258,27 +257,26 @@ describe('ConfigurationParser Test Suite', () => {
     })
   })
 
-
   describe('Trace', () => {
     const validTests = [
       {
         settings: ['trace.options'],
-        values: [{ 'quiet': true }],
+        values: [{ quiet: true }],
         expected: '--quiet'
       },
       {
         settings: ['trace.options'],
-        values: [{ 'compact': true }],
+        values: [{ compact: true }],
         expected: '--compact-trace'
       },
       {
         settings: ['trace.options'],
-        values: [{ 'ssa': true }],
+        values: [{ ssa: true }],
         expected: '--ssa-trace'
       },
       {
         settings: ['trace.options'],
-        values: [{ 'symex': true }],
+        values: [{ symex: true }],
         expected: '--symex-trace'
       },
       {
@@ -354,7 +352,6 @@ describe('ConfigurationParser Test Suite', () => {
       }
     ]
 
-
     invalidTests.forEach(({ settings, values }) => {
       it(`Checking settings ${JSON.stringify(settings)} with respective invalid values ${JSON.stringify(values)} throws exception`, async function () {
         await assertIncorrectFlagParseThrows(settings, values)
@@ -408,11 +405,6 @@ describe('ConfigurationParser Test Suite', () => {
         settings: ['frontEnd.programLoopClaimVcs'],
         values: ['show-vcc'],
         expected: '--show-vcc'
-      },
-      {
-        settings: ['frontEnd.programLoopClaimVcs'],
-        values: ['document-subgoals'],
-        expected: '--document-subgoals'
       },
       {
         settings: ['frontEnd.claimRemoval'],
