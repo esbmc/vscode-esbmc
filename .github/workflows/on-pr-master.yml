@@ -5,26 +5,14 @@ on:
     branches:
       - master
 
+env:
+  # Pinned: an unpinned npx resolves the newest release at run time, so a
+  # breaking one would break packaging with no change here.
+  VSCE: '@vscode/vsce@3.9.2'
+
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Install Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: npm
-    - run: npm ci
-    - run: xvfb-run -a npm test
-      if: runner.os == 'Linux'
-    - run: npm test
-      if: runner.os != 'Linux'
+    uses: ./.github/workflows/test.yml
 
   package:
     runs-on: ubuntu-latest
@@ -39,9 +27,11 @@ jobs:
     - run: npm ci
     # Catches a broken manifest or a .vscodeignore that drops shipped assets
     # before a release tag does.
-    - run: npx --yes @vscode/vsce package --out vscode-esbmc.vsix
+    - run: npx --yes "$VSCE" package --out vscode-esbmc.vsix
     - name: Check the walkthrough assets are packaged
+      # Read out of the archive rather than asking vsce to list what it would
+      # package: only the archive is what ships.
       run: |
-        npx --yes @vscode/vsce ls > packaged.txt
-        grep -q "examples/buffer-overflow.c" packaged.txt
-        grep -q "walkthroughs/install.md" packaged.txt
+        unzip -Z1 vscode-esbmc.vsix > packaged.txt
+        grep -qx "extension/examples/buffer-overflow.c" packaged.txt
+        grep -qx "extension/walkthroughs/install.md" packaged.txt

@@ -27,6 +27,17 @@ int main(void)
 }
 `
 
+const SOLIDITY_FAILS = `// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.5.0;
+
+contract Simple {
+    function f() public pure {
+        uint8 x = 1;
+        assert(x == 2);
+    }
+}
+`
+
 const PASSES = `int main(void)
 {
   int values[4];
@@ -128,5 +139,25 @@ describe('SARIF pipeline against real ESBMC', function () {
     const assumptions = steps.flatMap(step => step.assumptions)
     assert.ok(assumptions.some(a => /^x == /.test(a)), `no value for x in ${JSON.stringify(assumptions)}`)
     assert.ok(assumptions.some(a => /^y == /.test(a)), `no value for y in ${JSON.stringify(assumptions)}`)
+  })
+
+  // Solidity needs solc to reach an AST, and ESBMC's Solidity model spins in
+  // an address loop until the unwind is bounded. Both are why this is the one
+  // language the extension supports that cannot be checked unconditionally.
+  it('produces a finding for a Solidity contract', async function () {
+    const file = path.join(dir, 'fails.sol')
+    const report = path.join(dir, 'fails-sol.sarif')
+    fs.writeFileSync(file, SOLIDITY_FAILS)
+    const result = await runShellCommand(
+      `esbmc "${file}" --unwind 2 --no-unwinding-assertions --sarif-output "${report}"`)
+    const transcript = result.stdout + result.stderr
+    if (/solc not found/.test(transcript)) {
+      return this.skip()
+    }
+    assert.match(transcript, /VERIFICATION FAILED/)
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    assert.ok(findings.length > 0, 'no findings for the Solidity contract')
+    assert.strictEqual(findings[0].file, file)
+    assert.strictEqual(findings[0].line, 7, 'the failing assertion is on line 7')
   })
 })

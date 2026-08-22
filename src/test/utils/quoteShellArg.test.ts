@@ -132,3 +132,49 @@ describe('splitShellArgs with quoteShellArg', function () {
     }
   })
 })
+
+// The POSIX suite above skips on Windows, which left the branch that rewrites
+// its input as the only one with no coverage at all. These run everywhere by
+// driving the win32 branch directly.
+describe('quoteShellArg on Windows', () => {
+  const original = process.platform
+
+  function asWin32 (run: () => void) {
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    try {
+      run()
+    } finally {
+      Object.defineProperty(process, 'platform', { value: original, configurable: true })
+    }
+  }
+
+  it('wraps a path in double quotes', () => {
+    asWin32(() => {
+      assert.strictEqual(quoteShellArg('C:\\Program Files\\a.c'), '"C:\\Program Files\\a.c"')
+    })
+  })
+
+  it('leaves a path alone but for the quotes', () => {
+    asWin32(() => {
+      for (const value of ['a.c', 'C:\\x\\y.c', 'with space.c', 'a&b.c', 'semi;colon.c', '$(id).c']) {
+        assert.strictEqual(quoteShellArg(value), `"${value}"`)
+      }
+    })
+  })
+
+  // cmd.exe expands %VAR% inside double quotes and offers no escape for it, so
+  // quoting a path containing one would name a different file.
+  it('refuses a path cmd.exe would rewrite rather than corrupting it', () => {
+    asWin32(() => {
+      assert.throws(() => quoteShellArg('C:\\100%\\a.c'), /cannot be passed a path containing %/)
+      assert.throws(() => quoteShellArg('C:\\%USERNAME%\\a.c'), /%/)
+      assert.throws(() => quoteShellArg('C:\\a"b\\c.c'), /cannot be passed a path containing "/)
+    })
+  })
+
+  it('names the path it refused', () => {
+    asWin32(() => {
+      assert.throws(() => quoteShellArg('C:\\100%\\a.c'), /C:\\100%\\a\.c/)
+    })
+  })
+})
