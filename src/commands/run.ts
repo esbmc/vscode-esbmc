@@ -27,7 +27,7 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
         flags = commentFlags
       } else {
         try {
-          flags = CONFIG_PARSER.parse(overides)
+          flags = await CONFIG_PARSER.parse(overides)
         } catch (error) {
           vscode.window.showErrorMessage(`ESBMC: ${error}`)
           return

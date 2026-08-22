@@ -45,7 +45,7 @@ async function configureSettings (settings: string[], values: any[]) {
 async function assertCorrectFlagParse (settings: string[], values: any[], expected: string) {
   await configureSettings(settings, values)
   const configParser: ConfigurationParser = new ConfigurationParser()
-  const flags: string = configParser.parse()
+  const flags: string = await configParser.parse()
   assert.equal(flags, expected, `Flags do not match. Expected: ${expected}, Got: ${flags}`)
 }
 
@@ -53,7 +53,7 @@ async function assertIncorrectFlagParseThrows (settings: string[], values: any[]
   await configureSettings(settings, values)
   configureSettings(settings, values)
   const configParser: ConfigurationParser = new ConfigurationParser()
-  assert.throws(() => configParser.parse(), Error)
+  await assert.rejects(() => configParser.parse(), Error)
 }
 
 describe('ConfigurationParser Test Suite', () => {

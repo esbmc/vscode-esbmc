@@ -1,8 +1,9 @@
 import { workspace } from 'vscode'
 import { sha1 } from 'object-hash'
-import { flatten } from 'flatten-anything'
 
 import { Configuration } from '../@types/vscode.configuration'
+
+type Flatten = (config: Configuration) => Configuration
 
 export const SECTIONS = [
   'bmc',
@@ -46,7 +47,10 @@ export class ConfigurationParser {
      * Parses ESBMC settings
      * @returns flags used to run ESBMC
      */
-  public parse (overides?: Configuration): string {
+  public async parse (overides?: Configuration): Promise<string> {
+    // flatten-anything 4 is ESM-only, so a CommonJS build reaches it through
+    // import() -- which is what makes parsing asynchronous.
+    const { flatten } = await import('flatten-anything')
     overides = overides || {}
     const workspaceConfig = workspace.getConfiguration(this._root)
     const hashConfig = sha1(workspaceConfig)
@@ -69,7 +73,7 @@ export class ConfigurationParser {
       if (Object.keys(sectionChangedValues).length === 0) {
         continue
       }
-      this.parseSection(sectionChangedValues, section)
+      this.parseSection(sectionChangedValues, section, flatten)
     }
     // Store cached values if parsing completes
     this.cachedConfigHash = hashConfig
@@ -84,7 +88,7 @@ export class ConfigurationParser {
      * @param config extensions sections configuration
      * @param section extensions section to parse
      */
-  private parseSection (config: Configuration, section: string): void {
+  private parseSection (config: Configuration, section: string, flatten: Flatten): void {
     // Store flattened section config to use in dependent flags
     this.flatSectionConfig = flatten(config)
     for (let [key, value] of Object.entries(this.flatSectionConfig)) {
