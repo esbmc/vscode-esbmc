@@ -2,12 +2,15 @@
   "name": "vscode-esbmc",
   "displayName": "ESBMC",
   "description": "Verify C and C++ programs from VS Code with ESBMC, the Efficient SMT-based Bounded Model Checker",
-  "publisher": "jossmoff",
+  "publisher": "esbmc",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.68.0"
   },
   "categories": [
+    "Testing",
+    "Linters",
+    "Programming Languages",
     "Other"
   ],
   "activationEvents": [
@@ -823,5 +826,23 @@
     "mocha": {
       "serialize-javascript": "^7.1.0"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/esbmc/vscode-esbmc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/esbmc/vscode-esbmc/issues"
+  },
+  "homepage": "http://esbmc.org/",
+  "keywords": [
+    "esbmc",
+    "bounded model checking",
+    "formal verification",
+    "static analysis",
+    "c",
+    "c++",
+    "solidity",
+    "python"
+  ]
 }

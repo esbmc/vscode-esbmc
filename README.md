@@ -229,6 +229,20 @@ VS Code opens a terminal showing:
 - verification progress,
 - and the final result.
 
+## 11.2 Releasing
+
+Publishing is automated. Tag a commit whose `package.json` version matches the
+tag and push it:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The `Publish` workflow runs the tests on all three platforms, packages the
+extension, publishes it to the VS Code Marketplace and Open VSX, and attaches
+the VSIX to the GitHub release. It needs two repository secrets, `VSCE_PAT`
+and `OVSX_PAT`, and a registered `esbmc` publisher on both registries.
+
 ## 12. Summary
 
 By following the steps in this README, you can:

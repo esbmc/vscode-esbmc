@@ -6,6 +6,22 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- A tag-triggered workflow that runs the test matrix, packages the extension
+  and publishes it to the VS Code Marketplace and Open VSX, then attaches the
+  VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
+- Pull requests now package the extension as well as testing it, and check
+  that the walkthrough assets are still included.
+
+### Changed
+
+- Marketplace metadata: `repository`, `bugs`, `homepage`, `keywords`, and
+  categories widened from `Other` to Testing, Linters and Programming
+  Languages. The publisher is now `esbmc` rather than a personal account.
+- A `.vscodeignore` keeps sources, tests and repository plumbing out of the
+  VSIX, which drops it from 492 to 406 files.
+
 ## [0.1.0]
 
 ### Added

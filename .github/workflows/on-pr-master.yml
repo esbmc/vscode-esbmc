@@ -25,3 +25,23 @@ jobs:
       if: runner.os == 'Linux'
     - run: npm test
       if: runner.os != 'Linux'
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: npm
+    - run: npm ci
+    # Catches a broken manifest or a .vscodeignore that drops shipped assets
+    # before a release tag does.
+    - run: npx --yes @vscode/vsce package --out vscode-esbmc.vsix
+    - name: Check the walkthrough assets are packaged
+      run: |
+        npx --yes @vscode/vsce ls > packaged.txt
+        grep -q "examples/buffer-overflow.c" packaged.txt
+        grep -q "walkthroughs/install.md" packaged.txt
