@@ -27,6 +27,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- Dropped `glob` from the test runner, which walks its own directory in a
+  dozen lines. Its callback API was removed in v9 and each major since raises
+  the Node floor. A test now guards the walk, because a discovery bug makes the
+  whole suite pass while running nothing.
+- Bumped mocha, `@types/node` and `@types/object-hash`, pinning `diff` to a
+  version without an advisory so `npm audit` stays at zero.
+
 - `node-fetch` and `flatten-anything` are gone. Both became ESM-only in their
   next major and cannot be `require`d from this extension, which compiles to
   CommonJS, so Dependabot could only ever offer updates that break the build.

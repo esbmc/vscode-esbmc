@@ -1,10 +1,24 @@
-/* eslint-disable promise/param-names */
+import * as fs from 'fs'
 import * as path from 'path'
 import * as Mocha from 'mocha'
-import * as glob from 'glob'
 
-export function run (): Promise<void> {
-  // Create the mocha test
+/**
+ * Finds the compiled test files.
+ *
+ * Done here rather than with glob, whose callback API was removed in v9 and
+ * whose newer majors keep raising the Node floor, for one directory walk.
+ */
+export function testFiles (dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      return testFiles(full)
+    }
+    return entry.name.endsWith('.test.js') ? [full] : []
+  })
+}
+
+export async function run (): Promise<void> {
   const mocha = new Mocha({
     ui: 'bdd',
     timeout: 10000,
@@ -12,29 +26,12 @@ export function run (): Promise<void> {
   })
 
   const testsRoot = path.resolve(__dirname, '..')
+  for (const file of testFiles(testsRoot).sort()) {
+    mocha.addFile(file)
+  }
 
-  return new Promise((c, e) => {
-    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
-      if (err) {
-        return e(err)
-      }
-
-      // Add files to the test suite
-      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)))
-
-      try {
-        // Run the mocha test
-        mocha.run(failures => {
-          if (failures > 0) {
-            e(new Error(`${failures} tests failed.`))
-          } else {
-            c()
-          }
-        })
-      } catch (err) {
-        console.error(err)
-        e(err)
-      }
-    })
-  })
+  const failures = await new Promise<number>(resolve => mocha.run(resolve))
+  if (failures > 0) {
+    throw new Error(`${failures} tests failed.`)
+  }
 }
