@@ -12,6 +12,10 @@ The ESBMC VS Code extension allows you to:
 - Install (download + unpack) the **latest ESBMC** binary on Linux using a dedicated command.
 - See violated properties as squiggles in the editor and in the Problems panel, with the raw ESBMC output in an `ESBMC` output channel.
 
+Once the extension is installed, **Help → Welcome → Get started with ESBMC**
+walks through installing ESBMC, opening the bundled `examples/buffer-overflow.c`
+and reading the counterexample it produces.
+
 This document assumes you are using a Debian/Ubuntu-based distribution and the **bash** shell.
 
 ---
