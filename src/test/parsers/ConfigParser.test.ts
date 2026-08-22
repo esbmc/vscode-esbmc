@@ -423,6 +423,13 @@ describe('ConfigurationParser Test Suite', () => {
         expected: '--32'
       },
       {
+        // Choosing the default explicitly must still reach ESBMC, whose own
+        // default need not match the manifest's.
+        settings: ['frontEnd.wordLength'],
+        values: [64],
+        expected: '--64'
+      },
+      {
         settings: ['frontEnd.architecture'],
         values: ['i386-macos'],
         expected: '--i386-macos'
@@ -436,6 +443,13 @@ describe('ConfigurationParser Test Suite', () => {
         settings: ['frontEnd.architecture'],
         values: ['i386-win32'],
         expected: '--i386-win32'
+      },
+      {
+        // ESBMC defaults to the host architecture, so on macOS or Windows an
+        // unsent --i386-linux silently gives the user a different one.
+        settings: ['frontEnd.architecture'],
+        values: ['i386-linux'],
+        expected: '--i386-linux'
       },
       {
         settings: ['frontEnd.endianness'],
@@ -688,6 +702,13 @@ describe('ConfigurationParser Test Suite', () => {
         settings: ['solver.smtSolver'],
         values: ['bitwuzla'],
         expected: '--bitwuzla'
+      },
+      {
+        // ESBMC picks bitwuzla when no solver is named, so choosing boolector
+        // has to be sent or it is quietly ignored.
+        settings: ['solver.smtSolver'],
+        values: ['boolector'],
+        expected: '--boolector'
       },
       {
         // --smtlib-solver-prog only names the binary; without --smtlib ESBMC
