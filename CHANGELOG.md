@@ -24,6 +24,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- The README is now a description of what the extension does rather than a
+  build-from-source walkthrough, with the build, test and release instructions
+  moved to `CONTRIBUTING.md`. It no longer walks the reader through a test log
+  that was never in the repository.
+
 - The installer downloads the asset for the running platform and unpacks it
   into the extension's storage directory instead of hard-coding the Linux
   archive and writing to `$HOME/bin`. Windows uses PowerShell to unpack, since
