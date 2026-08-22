@@ -1,7 +1,8 @@
-import { Request, default as fetch } from 'node-fetch'
+import { loadNodeFetch } from './nodeFetch'
 import { executeShellCommand } from './commands'
 
 export async function getLatestVersion () {
+  const { default: fetch, Request } = await loadNodeFetch()
   const request = new Request('https://github.com/esbmc/esbmc/releases/latest')
   const response = await fetch(request)
   const redirUrl = response.url
