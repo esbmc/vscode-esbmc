@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
-import { executeShellCommand } from '../utils/commands'
+import * as os from 'os'
+import * as path from 'path'
+import { executeShellCommand, quoteShellArg, runShellCommand } from '../utils/commands'
 import { callOllama } from '../ai/ollamaClient'
 
 export async function verifyWithAI (): Promise<void> {
@@ -25,19 +27,13 @@ export async function verifyWithAI (): Promise<void> {
   try {
     await executeShellCommand('esbmc --version')
   } catch {
-    esbmcCmd = '$HOME/bin/esbmc'
+    esbmcCmd = quoteShellArg(path.join(os.homedir(), 'bin', 'esbmc'))
   }
 
-  let esbmcOutput: string
-  try {
-    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}"`)
-    if (!esbmcOutput || !esbmcOutput.trim()) {
-      esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
-    }
-  } catch (error: any) {
-    // ESBMC retorna código != 0 quando há violação; ainda assim o output é útil
-    esbmcOutput = String(error)
-  }
+  // ESBMC prints its verdict on stderr and exits non-zero on a violation, so
+  // both streams are kept and a non-zero exit is a result, not an error.
+  const result = await runShellCommand(`${esbmcCmd} ${quoteShellArg(filePath)}`)
+  const esbmcOutput = result.stdout + result.stderr
 
   channel.appendLine('=== ESBMC Output ===\n')
   channel.appendLine(esbmcOutput.trim())

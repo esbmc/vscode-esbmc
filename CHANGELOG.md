@@ -6,6 +6,24 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- Violated properties are reported as diagnostics: squiggles on the failing
+  line and entries in the Problems panel, read from ESBMC SARIF output rather
+  than scraped from the log.
+- `esbmc.editor.verifyOnSave` verifies a file each time it is saved, and
+  `esbmc.editor.timeout` kills a run that takes too long.
+- The verdict is shown in the status bar; clicking it opens the output.
+
+### Changed
+
+- Verification output goes to an `ESBMC` output channel instead of a terminal.
+
+### Fixed
+
+- File paths are shell-quoted, so a name containing `$(...)` no longer runs as
+  a command. This was reachable by saving a file with `verifyOnSave` enabled.
+
 ## [0.1.0]
 
 ### Added

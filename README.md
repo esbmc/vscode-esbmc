@@ -10,7 +10,7 @@ The ESBMC VS Code extension allows you to:
 
 - Run ESBMC on the **current C/C++ file** directly from the editor.
 - Install (download + unpack) the **latest ESBMC** binary on Linux using a dedicated command.
-- See ESBMC results in the integrated VS Code terminal.
+- See violated properties as squiggles in the editor and in the Problems panel, with the raw ESBMC output in an `ESBMC` output channel.
 
 This document assumes you are using a Debian/Ubuntu-based distribution and the **bash** shell.
 
@@ -219,11 +219,16 @@ According to `Teste_ESBMC.txt`, this workflow was successfully tested:
    ESBMC: Verify file
    ```
 
-VS Code opens a terminal showing:
+VS Code opens an **ESBMC** output channel showing the command line and the
+full ESBMC output, and reports the verdict in the status bar. Any violated
+property also appears as a squiggle on its line and in the **Problems** panel.
 
-- the ESBMC command line,
-- verification progress,
-- and the final result.
+Two settings control this:
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `esbmc.editor.verifyOnSave` | `false` | Verify a supported file every time it is saved |
+| `esbmc.editor.timeout` | `60` | Kill a run after this many seconds; `0` waits indefinitely |
 
 ## 12. Summary
 
