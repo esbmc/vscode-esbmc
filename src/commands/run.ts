@@ -39,7 +39,7 @@ export async function run (overides?: Configuration, commentFlags?: string):Prom
       } catch {
         esbmcCmd = '$HOME/bin/esbmc'
       }
-      const cmd = `${esbmcCmd} ${currentlyOpenTabfilePath} ${flags}`
+      const cmd = `${esbmcCmd} "${currentlyOpenTabfilePath}" ${flags}`
       const terminal = vscode.window.createTerminal('ESBMC')
       terminal.show()
       terminal.sendText(cmd)

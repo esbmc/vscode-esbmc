@@ -15,7 +15,8 @@
     "onLanguage:cpp",
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
-    "onCommand:vscode-esbmc.update"
+    "onCommand:vscode-esbmc.update",
+    "onCommand:vscode-esbmc.openExample"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -718,6 +719,63 @@
       {
         "command": "vscode-esbmc.verify.file.withAI",
         "title": "ESBMC: Verify file with Local AI"
+      },
+      {
+        "command": "vscode-esbmc.openExample",
+        "title": "ESBMC: Open example program"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "esbmc.getStarted",
+        "title": "Get started with ESBMC",
+        "description": "Install ESBMC and find your first bug without leaving the editor.",
+        "steps": [
+          {
+            "id": "install",
+            "title": "Install ESBMC",
+            "description": "ESBMC is a separate binary. Install the latest release, or let the extension pick up one already on your PATH.\n[Install ESBMC](command:vscode-esbmc.install)",
+            "media": {
+              "markdown": "walkthroughs/install.md"
+            },
+            "completionEvents": [
+              "onCommand:vscode-esbmc.install"
+            ]
+          },
+          {
+            "id": "openExample",
+            "title": "Open the example program",
+            "description": "A four-element array written five times — a bug that compiles cleanly.\n[Open the example](command:vscode-esbmc.openExample)",
+            "media": {
+              "markdown": "walkthroughs/open-example.md"
+            },
+            "completionEvents": [
+              "onCommand:vscode-esbmc.openExample"
+            ]
+          },
+          {
+            "id": "verify",
+            "title": "Verify the file",
+            "description": "Run ESBMC over the open file using your current settings.\n[Verify file](command:vscode-esbmc.verify.file)",
+            "media": {
+              "markdown": "walkthroughs/verify.md"
+            },
+            "completionEvents": [
+              "onCommand:vscode-esbmc.verify.file"
+            ]
+          },
+          {
+            "id": "counterexample",
+            "title": "Read the counterexample",
+            "description": "ESBMC reports which property failed, where, and the trace that gets there.",
+            "media": {
+              "markdown": "walkthroughs/counterexample.md"
+            },
+            "completionEvents": [
+              "onStepSelected"
+            ]
+          }
+        ]
       }
     ]
   },
@@ -727,7 +785,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "test:package": "mocha --ui bdd out/test/package/**/*.test.js"
   },
   "extensionDependencies": [
     "mindaro-dev.file-downloader"
