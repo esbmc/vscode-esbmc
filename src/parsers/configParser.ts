@@ -5,6 +5,15 @@ import { Configuration } from '../@types/vscode.configuration'
 
 type Flatten = (config: Configuration) => Configuration
 
+// flatten-anything 4 is ESM-only, so a CommonJS build reaches it through
+// import() -- which is what makes parsing asynchronous.
+let flattening: Promise<Flatten> | undefined
+
+function loadFlatten (): Promise<Flatten> {
+  flattening = flattening ?? import('flatten-anything').then(({ flatten }) => flatten as Flatten)
+  return flattening
+}
+
 export const SECTIONS = [
   'bmc',
   'concurrencyChecking',
@@ -48,9 +57,7 @@ export class ConfigurationParser {
      * @returns flags used to run ESBMC
      */
   public async parse (overides?: Configuration): Promise<string> {
-    // flatten-anything 4 is ESM-only, so a CommonJS build reaches it through
-    // import() -- which is what makes parsing asynchronous.
-    const { flatten } = await import('flatten-anything')
+    const flatten = await loadFlatten()
     overides = overides || {}
     const workspaceConfig = workspace.getConfiguration(this._root)
     const hashConfig = sha1(workspaceConfig)
