@@ -1,6 +1,7 @@
 import { workspace } from 'vscode'
 import { sha1 } from 'object-hash'
 import { flatten } from './flatten'
+import { mergeConfigScopes } from './configScopes'
 
 import { Configuration } from '../@types/vscode.configuration'
 
@@ -59,7 +60,12 @@ export class ConfigurationParser {
     // Parse each section
     for (const section of this._sections) {
       const sectionConfig = workspaceConfig.inspect<Configuration>(section)
-      let sectionChangedValues = sectionConfig?.globalValue || {}
+      // User, then workspace, then folder: the narrowest scope the user set wins.
+      let sectionChangedValues = mergeConfigScopes(
+        sectionConfig?.globalValue,
+        sectionConfig?.workspaceValue,
+        sectionConfig?.workspaceFolderValue
+      )
       // If overrides are present that arent in the updated values, add them
       this.overides = overides
       if (section in this.overides) {

@@ -41,7 +41,7 @@
           "esbmc.frontEnd.includeAfter": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "Enable or disable system include path to search after system headers, `#esbmc.includePath#` must be set if enabled",
+            "markdownDescription": "Enable or disable system include path to search after system headers, `#esbmc.frontEnd.includePath#` must be set if enabled",
             "order": 2
           },
           "esbmc.frontEnd.defineMacros": {

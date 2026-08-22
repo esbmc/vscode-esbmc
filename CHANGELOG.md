@@ -70,6 +70,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 
+- Settings set in a workspace or folder `settings.json` were silently ignored:
+  the flag parser read only the user scope, so a per-project unwind bound or
+  solver choice did nothing. All three scopes are now read, narrowest winning.
+- The `esbmc.frontEnd.includeAfter` description linked `#esbmc.includePath#`,
+  which is not a setting id, so it rendered as raw text instead of a link.
+
 - File paths are shell-quoted, so a name containing `$(...)` no longer runs as
   a command. This was reachable by saving a file with `verifyOnSave` enabled.
 
