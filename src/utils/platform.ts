@@ -1,5 +1,4 @@
 import * as path from 'path'
-import { quoteShellArg } from './commands'
 
 const ASSETS: Record<string, string> = {
   linux: 'esbmc-linux.zip',
@@ -34,15 +33,31 @@ export function binaryPath (installDir: string, platform: string): string {
   return path.join(installDir, 'bin', binaryName(platform))
 }
 
+export interface Command {
+  file: string
+  args: string[]
+}
+
 /**
- * A command that unpacks a zip, since Windows has no `unzip`. PowerShell
- * single-quoted strings escape a quote by doubling it.
+ * Unpacks a zip, since Windows has no `unzip`.
+ *
+ * Returned as a program and its arguments rather than a command line: run
+ * through a shell, `cmd.exe` would substitute `%VAR%` in a storage path
+ * before PowerShell ever saw it. PowerShell single-quoted strings still
+ * escape a quote by doubling it, since -Command takes one script.
  */
-export function extractCommand (zip: string, destination: string, platform: string): string {
+export function extractCommand (zip: string, destination: string, platform: string): Command {
   if (platform === 'win32') {
     const literal = (value: string) => `'${value.replace(/'/g, "''")}'`
-    return 'powershell -NoProfile -NonInteractive -Command ' +
-      `"Expand-Archive -Force -LiteralPath ${literal(zip)} -DestinationPath ${literal(destination)}"`
+    return {
+      file: 'powershell',
+      args: [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `Expand-Archive -Force -LiteralPath ${literal(zip)} -DestinationPath ${literal(destination)}`
+      ]
+    }
   }
-  return `unzip -o ${quoteShellArg(zip, platform)} -d ${quoteShellArg(destination, platform)}`
+  return { file: 'unzip', args: ['-o', zip, '-d', destination] }
 }

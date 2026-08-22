@@ -19,19 +19,69 @@ export async function executeShellCommand (cmd: string): Promise<string> {
   })
 }
 
+/** Legal in a Windows path, and not expressible as one cmd.exe argument. */
+const UNQUOTABLE_ON_WINDOWS = /["%]/
+
 /**
  * Quotes a value so a shell treats it as one literal argument.
  *
  * Double quotes are not enough on POSIX: `$(...)` and backticks still expand
  * inside them, so a file named `$(rm -rf ~)x.c` would run its own command.
- * `cmd.exe` has no such substitution, and leaves the metacharacters it does
- * have alone inside double quotes.
+ *
+ * `cmd.exe` has no command substitution, but it does expand `%VAR%` inside
+ * double quotes, and a command line offers no escape for either `%` or `"`.
+ * Both are legal in a Windows path, so such a value is refused: quoting it
+ * anyway would run ESBMC against a different file than the one asked for.
+ *
+ * @throws when a Windows path cannot be expressed as one cmd.exe argument.
  */
 export function quoteShellArg (value: string, platform: string = process.platform): string {
   if (platform === 'win32') {
-    return `"${value.replace(/"/g, '')}"`
+    const unquotable = UNQUOTABLE_ON_WINDOWS.exec(value)
+    if (unquotable !== null) {
+      throw Error(`cmd.exe cannot be passed a path containing ${unquotable[0]}: ${value}`)
+    }
+    return `"${value}"`
   }
   return `'${value.replace(/'/g, "'\\''")}'`
+}
+
+/**
+ * Splits a command line into the arguments a shell would group it into,
+ * honouring quotes but leaving every other metacharacter inside its token.
+ *
+ * Callers re-quote each argument with quoteShellArg, so a value carrying
+ * `;`, `&&` or `$(...)` ends up as one literal ESBMC flag rather than a
+ * command of its own. Backslashes are left alone, so Windows paths survive.
+ */
+export function splitShellArgs (value: string): string[] {
+  const args: string[] = []
+  let current = ''
+  let started = false
+  let quote: string | undefined
+
+  for (const char of value) {
+    if (quote === undefined && /\s/.test(char)) {
+      if (started) {
+        args.push(current)
+        current = ''
+        started = false
+      }
+      continue
+    }
+    started = true
+    if (quote === undefined && (char === "'" || char === '"')) {
+      quote = char
+    } else if (char === quote) {
+      quote = undefined
+    } else {
+      current += char
+    }
+  }
+  if (started) {
+    args.push(current)
+  }
+  return args
 }
 
 export interface CommandResult {
@@ -68,13 +118,34 @@ function killTree (pid: number | undefined): void {
  * violation, which is a result rather than an error.
  */
 export async function runShellCommand (cmd: string, options: RunOptions = {}): Promise<CommandResult> {
+  return capture(detached => cp.spawn(cmd, { shell: true, detached }), options)
+}
+
+/**
+ * Runs a program directly, with no shell between the arguments and it.
+ *
+ * On Windows a shell command goes through `cmd.exe`, which substitutes
+ * `%VAR%` before the program is started, so an argument holding a legal `%`
+ * arrives rewritten. Nothing quotes its way out of that.
+ */
+export async function runProcess (
+  file: string,
+  args: string[],
+  options: RunOptions = {}
+): Promise<CommandResult> {
+  return capture(detached => cp.spawn(file, args, { detached }), options)
+}
+
+function capture (
+  spawn: (detached: boolean) => cp.ChildProcess,
+  options: RunOptions
+): Promise<CommandResult> {
   const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(0, options.timeoutMs as number) : 0
   return new Promise<CommandResult>(resolve => {
-    // Detached so the shell leads its own process group: killing the shell
+    // Detached so the child leads its own process group: killing the shell
     // alone leaves the command running and its pipes open, so the run never
     // finishes.
-    const detached = process.platform !== 'win32'
-    const child = cp.spawn(cmd, { shell: true, detached })
+    const child = spawn(process.platform !== 'win32')
     let stdout = ''
     let stderr = ''
     let timedOut = false

@@ -32,6 +32,43 @@ describe('toDiagnostic', () => {
     assert.strictEqual(diagnostic.range.start.character, 0)
   })
 
+  // The reason lineText exists: an empty range at column 0 renders as no
+  // squiggle at all on an indented line, so the range has to span the code.
+  it('spans the code on the line when the source is available', () => {
+    const diagnostic = toDiagnostic(finding(), '    values[i] = i;')
+    assert.strictEqual(diagnostic.range.start.character, 4, 'starts at the first non-whitespace character')
+    assert.strictEqual(diagnostic.range.end.character, 18, 'ends at the last')
+  })
+
+  it('stops at the end of the code, not the end of the trailing whitespace', () => {
+    const diagnostic = toDiagnostic(finding(), '  x = 1;   ')
+    assert.strictEqual(diagnostic.range.start.character, 2)
+    assert.strictEqual(diagnostic.range.end.character, 8)
+  })
+
+  // ESBMC gives no column, but a comment-flag override or another producer can.
+  it('keeps a reported column as the start, and never ends before it', () => {
+    const withColumn = toDiagnostic(finding({ column: 7 }), '    values[i] = i;')
+    assert.strictEqual(withColumn.range.start.character, 6)
+
+    const pastTheEnd = toDiagnostic(finding({ column: 40 }), '  x = 1;')
+    assert.ok(
+      pastTheEnd.range.end.character >= pastTheEnd.range.start.character,
+      'the range ends before it starts'
+    )
+  })
+
+  it('spans a blank line without inverting the range', () => {
+    const diagnostic = toDiagnostic(finding(), '    ')
+    assert.strictEqual(diagnostic.range.start.character, 4)
+    assert.strictEqual(diagnostic.range.end.character, 4)
+  })
+
+  // Without the source, the range runs to the end of whatever is there.
+  it('runs to the end of the line when the source is not available', () => {
+    assert.strictEqual(toDiagnostic(finding()).range.end.character, Number.MAX_SAFE_INTEGER)
+  })
+
   it('maps severities onto the VS Code scale', () => {
     assert.strictEqual(toDiagnostic(finding({ severity: 'error' })).severity, vscode.DiagnosticSeverity.Error)
     assert.strictEqual(toDiagnostic(finding({ severity: 'warning' })).severity, vscode.DiagnosticSeverity.Warning)

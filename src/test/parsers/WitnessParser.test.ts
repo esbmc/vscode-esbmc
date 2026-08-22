@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import * as fs from 'fs'
 import * as path from 'path'
-import { parseGraphmlWitness, describeStep, TraceStep } from '../../parsers/witnessParser'
+import { parseGraphmlWitness, describeStep, resolveTracePaths, TraceStep } from '../../parsers/witnessParser'
 
 const FIXTURE = path.resolve(__dirname, '..', '..', '..', 'src', 'test', 'fixtures', 'violation.graphml')
 
@@ -89,5 +89,45 @@ describe('describeStep', () => {
   it('falls back to the line, then to nothing useful', () => {
     assert.strictEqual(describeStep(step({ line: 7 })), 'line 7')
     assert.strictEqual(describeStep(step()), 'step')
+  })
+})
+
+// Findings go through resolveFindingPaths for the same reason: ESBMC writes
+// back the path it was given, and the editor opens what the step names.
+describe('resolveTracePaths', () => {
+  function step (file?: string): TraceStep {
+    return { assumptions: [], file }
+  }
+
+  it('anchors a relative file to the directory ESBMC ran in', () => {
+    const [resolved] = resolveTracePaths([step('a.c')], '/work')
+    assert.strictEqual(resolved.file, path.resolve('/work', 'a.c'))
+  })
+
+  it('leaves an absolute file alone', () => {
+    const absolute = path.resolve('/src', 'a.c')
+    const [resolved] = resolveTracePaths([step(absolute)], '/work')
+    assert.strictEqual(resolved.file, absolute)
+  })
+
+  it('leaves a step with no file alone', () => {
+    const [resolved] = resolveTracePaths([step()], '/work')
+    assert.strictEqual(resolved.file, undefined)
+  })
+
+  it('resolves every step, not just the first', () => {
+    const resolved = resolveTracePaths([step('a.c'), step('b.c')], '/work')
+    assert.deepStrictEqual(
+      resolved.map(s => s.file),
+      [path.resolve('/work', 'a.c'), path.resolve('/work', 'b.c')]
+    )
+  })
+
+  it('keeps the other fields of a step it rewrites', () => {
+    const original: TraceStep = { assumptions: ['x == 1'], file: 'a.c', line: 4, enterFunction: 'main' }
+    const [resolved] = resolveTracePaths([original], '/work')
+    assert.deepStrictEqual(resolved.assumptions, ['x == 1'])
+    assert.strictEqual(resolved.line, 4)
+    assert.strictEqual(resolved.enterFunction, 'main')
   })
 })

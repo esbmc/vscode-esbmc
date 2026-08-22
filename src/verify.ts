@@ -1,10 +1,10 @@
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { quoteShellArg, runShellCommand } from './utils/commands'
+import { quoteShellArg, runShellCommand, splitShellArgs } from './utils/commands'
 import { resolveEsbmcCommand } from './utils/esbmcPath'
 import { EsbmcFinding, parseSarif, resolveFindingPaths } from './parsers/sarifParser'
-import { TraceStep, parseGraphmlWitness } from './parsers/witnessParser'
+import { TraceStep, parseGraphmlWitness, resolveTracePaths } from './parsers/witnessParser'
 import { Verdict, classifyVerdict } from './parsers/verdict'
 
 export interface VerifyOptions {
@@ -64,11 +64,18 @@ export async function verifyFile (file: string, options: VerifyOptions = {}): Pr
   const witness = path.join(reportDir, 'witness.graphml')
 
   try {
-    const flags = options.flags === undefined || options.flags === '' ? '' : ` ${options.flags}`
-    const command =
-      `${esbmc} ${quoteShellArg(file)}${flags}` +
-      ` --sarif-output ${quoteShellArg(report)}` +
-      ` --witness-output-graphml ${quoteShellArg(witness)}`
+    // Flags reach here from agent input through the MCP verify tool, and the
+    // command is handed to a shell, so every token is quoted as a literal.
+    const flags = splitShellArgs(options.flags ?? '').map(flag => quoteShellArg(flag))
+    const command = [
+      esbmc,
+      quoteShellArg(file),
+      ...flags,
+      '--sarif-output',
+      quoteShellArg(report),
+      '--witness-output-graphml',
+      quoteShellArg(witness)
+    ].join(' ')
 
     const run = await runShellCommand(command, {
       timeoutMs: timeoutSeconds * 1000,
@@ -78,7 +85,12 @@ export async function verifyFile (file: string, options: VerifyOptions = {}): Pr
     const findings = run.timedOut
       ? []
       : resolveFindingPaths(readIfPresent(report, parseSarif, []), path.dirname(file))
-    const trace = run.timedOut ? [] : readIfPresent(witness, parseGraphmlWitness, [])
+    // Same concern as the findings above: ESBMC emits paths relative to where
+    // it ran, so an unresolved trace step points at a file that does not exist
+    // — for the editor's trace view and for an agent reading it over MCP.
+    const trace = run.timedOut
+      ? []
+      : resolveTracePaths(readIfPresent(witness, parseGraphmlWitness, []), path.dirname(file))
     const transcript = run.stdout + run.stderr
 
     return {
