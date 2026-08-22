@@ -797,7 +797,7 @@
     "@types/node": "^22.20.1",
     "@types/node-fetch": "^2.6.2",
     "@types/object-hash": "^2.2.1",
-    "@types/semver": "^7.3.10",
+    "@types/semver": "^7.8.0",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
@@ -817,7 +817,7 @@
     "flatten-anything": "^3.0.2",
     "node-fetch": "^2.6.7",
     "object-hash": "^3.0.0",
-    "semver": "^7.3.7"
+    "semver": "^7.8.5"
   },
   "overrides": {
     "mocha": {
