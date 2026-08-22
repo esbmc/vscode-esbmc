@@ -68,13 +68,34 @@ function killTree (pid: number | undefined): void {
  * violation, which is a result rather than an error.
  */
 export async function runShellCommand (cmd: string, options: RunOptions = {}): Promise<CommandResult> {
+  return capture(detached => cp.spawn(cmd, { shell: true, detached }), options)
+}
+
+/**
+ * Runs a program directly, with no shell between the arguments and it.
+ *
+ * On Windows a shell command goes through `cmd.exe`, which substitutes
+ * `%VAR%` before the program is started, so an argument holding a legal `%`
+ * arrives rewritten. Nothing quotes its way out of that.
+ */
+export async function runProcess (
+  file: string,
+  args: string[],
+  options: RunOptions = {}
+): Promise<CommandResult> {
+  return capture(detached => cp.spawn(file, args, { detached }), options)
+}
+
+function capture (
+  spawn: (detached: boolean) => cp.ChildProcess,
+  options: RunOptions
+): Promise<CommandResult> {
   const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(0, options.timeoutMs as number) : 0
   return new Promise<CommandResult>(resolve => {
-    // Detached so the shell leads its own process group: killing the shell
+    // Detached so the child leads its own process group: killing the shell
     // alone leaves the command running and its pipes open, so the run never
     // finishes.
-    const detached = process.platform !== 'win32'
-    const child = cp.spawn(cmd, { shell: true, detached })
+    const child = spawn(process.platform !== 'win32')
     let stdout = ''
     let stderr = ''
     let timedOut = false
