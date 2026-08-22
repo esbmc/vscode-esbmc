@@ -66,12 +66,13 @@ describe('getInstalledVersion', function () {
     assert.strictEqual(await getInstalledVersion(), '7.9.0')
   })
 
-  it('prefers $HOME/bin/esbmc over the one on PATH', async () => {
+  // A user's own ESBMC wins over one this extension installed for them.
+  it('prefers the ESBMC on PATH over a legacy $HOME/bin install', async () => {
     const dir = path.join(home, 'pathbin')
     fakeEsbmc(dir, 'ESBMC version 7.9.0')
     fakeEsbmc(path.join(home, 'bin'), 'ESBMC version 7.6.1')
     process.env.PATH = dir
-    assert.strictEqual(await getInstalledVersion(), '7.6.1')
+    assert.strictEqual(await getInstalledVersion(), '7.9.0')
   })
 
   it('returns undefined when ESBMC is not installed', async () => {

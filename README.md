@@ -9,7 +9,7 @@ This README explains how to go from the extension source code to a working ESBMC
 The ESBMC VS Code extension allows you to:
 
 - Run ESBMC on the **current C, C++, Python or Solidity file** directly from the editor.
-- Install (download + unpack) the **latest ESBMC** binary on Linux using a dedicated command.
+- Install (download + unpack) the **latest ESBMC** binary on Linux, macOS or Windows using a dedicated command.
 - See violated properties as squiggles in the editor and in the Problems panel, with the raw ESBMC output in an `ESBMC` output channel.
 
 Once the extension is installed, **Help → Welcome → Get started with ESBMC**
@@ -24,7 +24,7 @@ This document assumes you are using a Debian/Ubuntu-based distribution and the *
 
 Before building and using the extension, make sure you have:
 
-- **Linux** (tested on Ubuntu-based systems).
+- **Linux**, **macOS** or **Windows**. The build instructions below were written on Ubuntu; the packaged extension runs on all three.
 - **Visual Studio Code** installed.
 - **curl** and **git** (for downloads and version control).
 - **unzip** installed on your system (required for automatic ESBMC installation).
@@ -205,7 +205,7 @@ With the extension installed and active:
    ESBMC: Update to latest version
    ````
 
-The extension will automatically download and install the latest ESBMC binary suitable for your Linux environment.
+The extension downloads the release asset for your platform (`esbmc-linux.zip`, `esbmc-macos.zip` or `esbmc-windows.zip`) and unpacks it into its own storage directory, so nothing is written to `$HOME/bin` and no `PATH` change is needed.
 
 ---
 
@@ -234,6 +234,14 @@ Two settings control this:
 | `esbmc.editor.verifyOnSave` | `false` | Verify a supported file every time it is saved |
 | `esbmc.editor.timeout` | `60` | Kill a run after this many seconds; `0` waits indefinitely |
 
+## 11.1 Running against a remote machine
+
+The extension is marked `extensionKind: ["workspace"]`, so with **Remote-SSH**,
+**WSL** or **Dev Containers** it runs where the code is rather than on the
+local UI host. ESBMC is then installed and executed on the remote machine,
+which is the supported route if you want a Linux ESBMC while working from a
+Windows or macOS desktop.
+
 ## 12. Summary
 
 By following the steps in this README, you can:
@@ -255,7 +263,7 @@ This feature is optional — you can continue using ESBMC normally without AI.
 
 ### Requirements for AI usage
 
-- Linux (tested on Ubuntu)
+- Linux (tested on Ubuntu), macOS and Windows
 - ESBMC installed through this extension
 - Ollama installed and running
 - A local AI model downloaded (recommended below)
