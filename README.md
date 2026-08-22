@@ -72,6 +72,29 @@ and **AI Integration** in the Settings UI. Each value documents the flag it
 produces. Only settings that differ from their default emit anything, which is
 why **ESBMC: Show current flags** exists.
 
+## Use ESBMC from an AI agent
+
+The extension ships an MCP server exposing a `verify` tool, so agents in
+Claude Code, Cursor, Copilot agent mode and Cline can run ESBMC themselves and
+read the counterexample. Point the agent at the entry point inside the
+installed extension:
+
+```json
+{
+  "mcpServers": {
+    "esbmc": {
+      "command": "node",
+      "args": ["<extension-path>/out/mcp/main.js"]
+    }
+  }
+}
+```
+
+`<extension-path>` is what **Developer: Show Running Extensions** reports for
+this extension. The tool takes a `file`, and optionally `flags` and
+`timeoutSeconds`; it answers with the verdict, each violated property and its
+location, and the counterexample trace.
+
 ## Remote development
 
 The extension declares `extensionKind: ["workspace"]`, so with **Remote-SSH**,

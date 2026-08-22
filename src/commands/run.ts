@@ -1,17 +1,12 @@
 import * as vscode from 'vscode'
-import * as fs from 'fs'
-import * as os from 'os'
 import * as path from 'path'
 import { ConfigurationParser } from '../parsers/configParser'
 import { Configuration } from '../@types/vscode.configuration'
-import { quoteShellArg, runShellCommand } from '../utils/commands'
-import { parseSarif, resolveFindingPaths, EsbmcFinding } from '../parsers/sarifParser'
-import { classifyVerdict, statusText } from '../parsers/verdict'
+import { statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { TraceView } from '../diagnostics/traceView'
-import { parseGraphmlWitness, resolveTracePaths, TraceStep } from '../parsers/witnessParser'
 import { SUPPORTED_EXTENSIONS } from '../languages'
-import { resolveEsbmcCommand } from '../utils/esbmcPath'
+import { EsbmcNotFoundError, VerifyResult, verifyFile } from '../verify'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
 /** Shared so the flag report and a run read through one settings cache. */
@@ -114,11 +109,6 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     }
   }
 
-  const esbmcCmd = await resolveEsbmcCommand()
-  if (esbmcCmd === undefined) {
-    vscode.window.showErrorMessage('ESBMC: not found, try running "ESBMC: Install latest version"')
-    return
-  }
   const timeoutSeconds = editorTimeoutSeconds()
 
   // Supersede any run still going: its output would interleave with this one.
@@ -135,74 +125,31 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   channel.appendLine(`\n${'\u2500'.repeat(60)}\nESBMC: verifying ${filePath}`)
   channel.show(true)
 
-  const workingDir = path.dirname(filePath)
-  const reportDir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-'))
-  const report = path.join(reportDir, 'result.sarif')
-  const witness = path.join(reportDir, 'witness.graphml')
+  let result: VerifyResult
   try {
-    let cmd: string
-    try {
-      cmd = `${esbmcCmd} ${quoteShellArg(filePath)} ${flags} --sarif-output ${quoteShellArg(report)} --witness-output-graphml ${quoteShellArg(witness)}`
-    } catch (error) {
-      // A path cmd.exe cannot be given. Refusing is the point; say so rather
-      // than verifying whatever the rewritten path names.
-      showStatus('$(error) ESBMC: cannot run')
-      channel.appendLine(`\nESBMC: ${String(error)}`)
-      vscode.window.showErrorMessage(`ESBMC: ${String(error)}`)
-      return
-    }
-    channel.appendLine(cmd)
-
-    const result = await runShellCommand(cmd, {
-      timeoutMs: timeoutSeconds * 1000,
+    result = await verifyFile(filePath, {
+      flags,
+      timeoutSeconds,
       onStart: kill => { killInFlight = kill }
     })
+  } catch (error) {
     if (token !== runToken || disposed) { return }
-    killInFlight = undefined
-
-    channel.append(result.stdout)
-    channel.append(result.stderr)
-
-    const findings = result.timedOut ? [] : resolveFindingPaths(readFindings(report, channel), workingDir)
-    diagnostics().report(findings)
-    trace().show(resolveTracePaths(readTrace(witness, channel), workingDir))
-
-    // ESBMC prints its verdict on stderr and only its version banner on stdout.
-    showStatus(statusText(classifyVerdict({
-      transcript: result.stdout + result.stderr,
-      findings,
-      timedOut: result.timedOut,
-      timeoutSeconds
-    })))
-    if (result.timedOut) {
-      channel.appendLine(`\nESBMC: killed after ${timeoutSeconds}s (esbmc.editor.timeout)`)
-    }
-  } finally {
-    fs.rmSync(reportDir, { recursive: true, force: true })
+    showStatus('$(question) ESBMC: no verdict')
+    vscode.window.showErrorMessage(error instanceof EsbmcNotFoundError
+      ? 'ESBMC: not found, try running "ESBMC: Install latest version"'
+      : `ESBMC: ${String(error)}`)
+    return
   }
-}
+  if (token !== runToken || disposed) { return }
+  killInFlight = undefined
 
-function readTrace (witness: string, channel: vscode.OutputChannel): TraceStep[] {
-  if (!fs.existsSync(witness)) {
-    return []
-  }
-  try {
-    return parseGraphmlWitness(fs.readFileSync(witness, 'utf8'))
-  } catch (error) {
-    channel.appendLine(`\nESBMC: could not read the counterexample witness (${String(error)})`)
-    return []
-  }
-}
-
-function readFindings (report: string, channel: vscode.OutputChannel): EsbmcFinding[] {
-  if (!fs.existsSync(report)) {
-    return []
-  }
-  try {
-    return parseSarif(fs.readFileSync(report, 'utf8'))
-  } catch (error) {
-    channel.appendLine(`\nESBMC: could not read the SARIF report (${String(error)})`)
-    return []
+  channel.appendLine(result.command)
+  channel.append(result.transcript)
+  diagnostics().report(result.findings)
+  trace().show(result.trace)
+  showStatus(statusText(result.verdict))
+  if (result.verdict.kind === 'timeout') {
+    channel.appendLine(`\nESBMC: killed after ${timeoutSeconds}s (esbmc.editor.timeout)`)
   }
 }
 

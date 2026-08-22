@@ -8,6 +8,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Added
 
+- An MCP server exposing a `verify` tool, so agents in Claude Code, Cursor,
+  Copilot agent mode and Cline can run ESBMC and read the counterexample
+  without going through the editor. Verification itself moved into a module
+  free of any VS Code import, which the editor commands and the server share.
+
 - Violated properties are reported as diagnostics: squiggles on the failing
   line and entries in the Problems panel, read from ESBMC SARIF output rather
   than scraped from the log.
