@@ -94,20 +94,18 @@ npm install
 Notes based on the test:
 
 - This step **worked correctly**.
-- npm may show warnings or a message similar to:
-
-  ```text
-  11 vulnerabilities (1 low, 5 moderate, 4 high, 1 critical)
-  ```
-
-  In this case, you may optionally run:
+- `npm audit` should report no vulnerabilities. If it reports some, check
+  whether the affected package is a runtime `dependency` before assuming it is
+  harmless — only the build and test toolchain is exempt.
 
   ```bash
   npm audit
-  npm audit fix
   ```
 
-  The extension can still be built and used even if some vulnerabilities remain.
+  Note that `npm audit fix` is not always the answer: `serialize-javascript` is
+  pinned through `overrides` because `npm audit fix` proposes an unhelpful mocha
+  downgrade instead. Dependabot opens weekly update pull requests, so the
+  lockfile should not drift far behind.
 
 ---
 
@@ -161,7 +159,7 @@ Typical behavior:
 At the end, you should see a file such as:
 
 ```text
-vscode-esbmc-0.0.1.vsix
+vscode-esbmc-0.1.0.vsix
 ```
 
 (or another versioned name) generated in the current directory.
@@ -173,7 +171,7 @@ vscode-esbmc-0.0.1.vsix
 1. Open **Visual Studio Code**.
 2. Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> to open the **Command Palette**.
 3. Run **“Extensions: Install from VSIX…”**.
-4. Navigate to the `.vsix` file you created (e.g. `vscode-esbmc-0.0.1.vsix`) and select it.
+4. Navigate to the `.vsix` file you created (e.g. `vscode-esbmc-0.1.0.vsix`) and select it.
 5. After installation, click **“Reload”** to restart VS Code and activate the extension:
 
 ````text

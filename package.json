@@ -1,9 +1,9 @@
 {
   "name": "vscode-esbmc",
   "displayName": "ESBMC",
-  "description": "TODO: Fill in later",
+  "description": "Verify C and C++ programs from VS Code with ESBMC, the Efficient SMT-based Bounded Model Checker",
   "publisher": "jossmoff",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.68.0"
   },
@@ -11,8 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-		"onLanguage:c",
-		"onLanguage:cpp",
+    "onLanguage:c",
+    "onLanguage:cpp",
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update"
@@ -664,7 +664,7 @@
   "devDependencies": {
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "16.x",
+    "@types/node": "20.x",
     "@types/node-fetch": "^2.6.2",
     "@types/object-hash": "^2.2.1",
     "@types/semver": "^7.3.10",
@@ -688,5 +688,10 @@
     "node-fetch": "^2.6.7",
     "object-hash": "^3.0.0",
     "semver": "^7.3.7"
+  },
+  "overrides": {
+    "mocha": {
+      "serialize-javascript": "^7.1.0"
+    }
   }
 }
