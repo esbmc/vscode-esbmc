@@ -103,6 +103,47 @@ describe('MCP server over stdio', function () {
     }
   })
 
+  // flags arrives verbatim from agent input and the command reaches a shell, so
+  // an unquoted token would run as a command of its own. Each payload has to
+  // stand alone: ESBMC's own flags follow it on the command line, and a bare
+  // `; touch MARKER` would collect them as arguments and fail before creating
+  // anything, hiding the very injection this pins down.
+  it('runs no command hidden in the flags an agent passes', async function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-mcp-'))
+    const file = path.join(dir, 'ok.c')
+    fs.writeFileSync(file, 'int main(void) { return 0; }\n')
+    try {
+      let id = 5
+      for (const shape of ['$(touch MARKER)', '`touch MARKER`', '; touch MARKER #']) {
+        const marker = path.join(dir, `pwned-${id}`)
+        const reply = await client.send(id++, 'tools/call', {
+          name: 'verify',
+          arguments: { file, flags: shape.replace('MARKER', marker) }
+        })
+        if (/not installed/.test(reply.result.content[0].text)) {
+          return this.skip()
+        }
+        assert.ok(!fs.existsSync(marker), `${shape} ran`)
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('reports its version from the manifest rather than a literal', async () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '..', '..', '..', 'package.json'), 'utf8')
+    )
+    const fresh = new StdioClient()
+    const reply = await fresh.send(1, 'initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'test', version: '0' }
+    })
+    fresh.close()
+    assert.strictEqual(reply.result.serverInfo.version, manifest.version)
+  })
+
   it('reports a missing file as a tool error rather than crashing', async () => {
     const reply = await client.send(4, 'tools/call', {
       name: 'verify',

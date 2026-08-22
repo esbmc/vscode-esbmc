@@ -1,9 +1,7 @@
 import * as vscode from 'vscode'
-import { ConfigurationParser } from '../parsers/configParser'
+import { CONFIG_PARSER } from './run'
 import { esbmcOutput } from '../utils/output'
 import { describeFlags } from '../parsers/flagReport'
-
-const CONFIG_PARSER = new ConfigurationParser()
 
 /**
  * Shows the ESBMC command line the current settings produce.
@@ -24,6 +22,13 @@ export async function showFlags (): Promise<void> {
 
   const channel = esbmcOutput()
   channel.appendLine(describeFlags(flags))
+  // run() also takes per-run overrides this command cannot know about, so say
+  // what the report does and does not cover rather than implying it is final.
+  channel.appendLine(
+    'Settings only. Verifying a single function through its CodeLens adds ' +
+    '--function for that function, and an @esbmc-verify comment above a ' +
+    'function replaces these flags with its own.'
+  )
   channel.show(true)
 
   if (flags === '') {

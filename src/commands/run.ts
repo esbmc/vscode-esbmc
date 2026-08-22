@@ -9,11 +9,13 @@ import { SUPPORTED_EXTENSIONS } from '../languages'
 import { EsbmcNotFoundError, VerifyResult, verifyFile } from '../verify'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
-const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
+/** Shared so the flag report and a run read through one settings cache. */
+export const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
 let TRACE: TraceView | undefined
+let TRACE_VIEW: vscode.Disposable | undefined
 let disposed = false
 
 // Only the newest run may touch the shared channel, status bar and
@@ -34,7 +36,9 @@ function status (): vscode.StatusBarItem {
 function trace (): TraceView {
   if (TRACE === undefined) {
     TRACE = new TraceView()
-    vscode.window.registerTreeDataProvider('esbmc.trace', TRACE)
+    // Keeping the registration: without disposing it, a second provider ends
+    // up registered for esbmc.trace the next time this runs.
+    TRACE_VIEW = vscode.window.registerTreeDataProvider('esbmc.trace', TRACE)
   }
   return TRACE
 }
@@ -42,6 +46,12 @@ function trace (): TraceView {
 function diagnostics (): EsbmcDiagnostics {
   DIAGNOSTICS = DIAGNOSTICS ?? new EsbmcDiagnostics()
   return DIAGNOSTICS
+}
+
+/** `esbmc.editor.timeout`, shared so every ESBMC run is bounded the same way. */
+export function editorTimeoutSeconds (): number {
+  const configured = vscode.workspace.getConfiguration('esbmc.editor').get<number>('timeout', 60)
+  return Number.isFinite(configured) ? Math.max(0, configured) : 60
 }
 
 export function showOutput (): void {
@@ -54,9 +64,11 @@ export function disposeRunState (): void {
   disposeOutput()
   STATUS?.dispose()
   DIAGNOSTICS?.dispose()
+  TRACE_VIEW?.dispose()
   TRACE?.dispose()
   STATUS = undefined
   DIAGNOSTICS = undefined
+  TRACE_VIEW = undefined
   TRACE = undefined
 }
 
@@ -97,8 +109,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     }
   }
 
-  const configured = vscode.workspace.getConfiguration('esbmc.editor').get<number>('timeout', 60)
-  const timeoutSeconds = Number.isFinite(configured) ? Math.max(0, configured) : 60
+  const timeoutSeconds = editorTimeoutSeconds()
 
   // Supersede any run still going: its output would interleave with this one.
   const token = ++runToken
@@ -109,7 +120,9 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   trace().clear()
   showStatus('$(loading~spin) ESBMC: verifying')
   const channel = output()
-  channel.clear()
+  // Not cleared: the channel also carries the flag report the user may have
+  // just asked for, and a save-triggered run would wipe it without a word.
+  channel.appendLine(`\n${'\u2500'.repeat(60)}\nESBMC: verifying ${filePath}`)
   channel.show(true)
 
   let result: VerifyResult
