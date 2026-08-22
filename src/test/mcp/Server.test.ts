@@ -1,0 +1,153 @@
+import * as assert from 'assert'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
+import { describeResult } from '../../mcp/server'
+import { VerifyResult } from '../../verify'
+
+const MAIN = path.resolve(__dirname, '..', '..', 'mcp', 'main.js')
+
+/** Speaks just enough JSON-RPC over stdio to act as an MCP client. */
+class StdioClient {
+  private readonly child: ChildProcessWithoutNullStreams
+  private buffer = ''
+  private readonly pending: Map<number, (message: any) => void> = new Map()
+
+  public constructor () {
+    this.child = spawn(process.execPath, [MAIN], { stdio: 'pipe' })
+    this.child.stdout.setEncoding('utf8')
+    this.child.stdout.on('data', chunk => {
+      this.buffer += chunk
+      let newline = this.buffer.indexOf('\n')
+      while (newline !== -1) {
+        const line = this.buffer.slice(0, newline).trim()
+        this.buffer = this.buffer.slice(newline + 1)
+        if (line !== '') {
+          const message = JSON.parse(line)
+          this.pending.get(message.id)?.(message)
+          this.pending.delete(message.id)
+        }
+        newline = this.buffer.indexOf('\n')
+      }
+    })
+  }
+
+  public async send (id: number, method: string, params: unknown = {}): Promise<any> {
+    return new Promise(resolve => {
+      this.pending.set(id, resolve)
+      this.child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n')
+    })
+  }
+
+  public notify (method: string, params: unknown = {}): void {
+    this.child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method, params }) + '\n')
+  }
+
+  public close (): void {
+    this.child.kill()
+  }
+}
+
+describe('MCP server over stdio', function () {
+  this.timeout(120000)
+
+  let client: StdioClient
+
+  before(async () => {
+    client = new StdioClient()
+    await client.send(1, 'initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'test', version: '0' }
+    })
+    client.notify('notifications/initialized')
+  })
+
+  after(() => client?.close())
+
+  it('introduces itself as esbmc', async () => {
+    const fresh = new StdioClient()
+    const reply = await fresh.send(1, 'initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'test', version: '0' }
+    })
+    fresh.close()
+    assert.strictEqual(reply.result.serverInfo.name, 'esbmc')
+  })
+
+  it('advertises the verify tool and what it takes', async () => {
+    const reply = await client.send(2, 'tools/list')
+    const tool = reply.result.tools.find((t: any) => t.name === 'verify')
+    assert.ok(tool, `verify not advertised in ${JSON.stringify(reply.result.tools)}`)
+    assert.deepStrictEqual(Object.keys(tool.inputSchema.properties).sort(), ['file', 'flags', 'timeoutSeconds'])
+    assert.deepStrictEqual(tool.inputSchema.required, ['file'])
+  })
+
+  it('reports a violation with its location', async function () {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-mcp-'))
+    const file = path.join(dir, 'fails.c')
+    fs.writeFileSync(file, 'int main(void)\n{\n  int v[4];\n  for (int i = 0; i <= 4; i++)\n    v[i] = i;\n  return 0;\n}\n')
+    try {
+      const reply = await client.send(3, 'tools/call', { name: 'verify', arguments: { file } })
+      const text: string = reply.result.content[0].text
+      if (/not installed/.test(text)) {
+        return this.skip()
+      }
+      assert.match(text, /VERIFICATION FAILED/)
+      assert.match(text, /array bounds/)
+      assert.match(text, new RegExp(`${file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:5`))
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('reports a missing file as a tool error rather than crashing', async () => {
+    const reply = await client.send(4, 'tools/call', {
+      name: 'verify',
+      arguments: { file: '/nonexistent/nope.c' }
+    })
+    assert.ok(reply.result.isError === true || /not installed|Could not verify|FAILED|NO VERDICT/.test(reply.result.content[0].text))
+  })
+})
+
+describe('describeResult', () => {
+  function result (overrides: Partial<VerifyResult> = {}): VerifyResult {
+    return {
+      verdict: { kind: 'success' },
+      findings: [],
+      trace: [],
+      transcript: '',
+      command: 'esbmc a.c',
+      ...overrides
+    }
+  }
+
+  it('states plainly what a successful result means', () => {
+    assert.match(describeResult('a.c', result()), /VERIFICATION SUCCESSFUL/)
+  })
+
+  it('lists each violated property with its location', () => {
+    const text = describeResult('a.c', result({
+      verdict: { kind: 'violations', count: 1 },
+      findings: [{ file: '/src/a.c', line: 5, message: 'array bounds violated', severity: 'error', cwes: ['CWE-787'] }]
+    }))
+    assert.match(text, /VERIFICATION FAILED: 1 property/)
+    assert.match(text, /\/src\/a\.c:5 array bounds violated \[CWE-787\]/)
+  })
+
+  it('includes the counterexample values', () => {
+    const text = describeResult('a.c', result({
+      verdict: { kind: 'violations', count: 1 },
+      trace: [{ file: '/src/a.c', line: 4, assumptions: ['x == 11'] }]
+    }))
+    assert.match(text, /Counterexample:/)
+    assert.match(text, /\/src\/a\.c:4 x == 11/)
+  })
+
+  it('distinguishes a timeout from a failure', () => {
+    assert.match(describeResult('a.c', result({ verdict: { kind: 'timeout', seconds: 5 } })), /TIMEOUT/)
+    assert.doesNotMatch(describeResult('a.c', result({ verdict: { kind: 'timeout', seconds: 5 } })), /FAILED/)
+  })
+})
