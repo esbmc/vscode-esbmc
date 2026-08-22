@@ -778,5 +778,8 @@
     "mocha": {
       "serialize-javascript": "^7.1.0"
     }
-  }
+  },
+  "extensionKind": [
+    "workspace"
+  ]
 }

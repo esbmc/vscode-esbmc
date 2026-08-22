@@ -4,11 +4,12 @@ import * as os from 'os'
 import * as path from 'path'
 import { ConfigurationParser } from '../parsers/configParser'
 import { Configuration } from '../@types/vscode.configuration'
-import { executeShellCommand, quoteShellArg, runShellCommand } from '../utils/commands'
+import { quoteShellArg, runShellCommand } from '../utils/commands'
 import { parseSarif, resolveFindingPaths, EsbmcFinding } from '../parsers/sarifParser'
 import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { SUPPORTED_EXTENSIONS } from '../languages'
+import { resolveEsbmcCommand } from '../utils/esbmcPath'
 
 const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
@@ -95,6 +96,10 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   }
 
   const esbmcCmd = await resolveEsbmcCommand()
+  if (esbmcCmd === undefined) {
+    vscode.window.showErrorMessage('ESBMC: not found, try running "ESBMC: Install latest version"')
+    return
+  }
   const configured = vscode.workspace.getConfiguration('esbmc.editor').get<number>('timeout', 60)
   const timeoutSeconds = Number.isFinite(configured) ? Math.max(0, configured) : 60
 
@@ -141,19 +146,6 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     }
   } finally {
     fs.rmSync(reportDir, { recursive: true, force: true })
-  }
-}
-
-/**
- * ESBMC is preferred from PATH, falling back to where the install command puts
- * it. Deliberately not cached: the install command can add it mid-session.
- */
-async function resolveEsbmcCommand (): Promise<string> {
-  try {
-    await executeShellCommand('esbmc --version')
-    return 'esbmc'
-  } catch {
-    return quoteShellArg(path.join(os.homedir(), 'bin', 'esbmc'))
   }
 }
 

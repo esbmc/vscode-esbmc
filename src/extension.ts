@@ -6,6 +6,7 @@ import { registerCodeLens } from './codelens/registerCodeLense'
 import { registerCommands } from './commands/registerCommands'
 import { verifyWithAI } from './commands/aiExplain'
 import { disposeRunState, isSupported, run } from './commands/run'
+import { setStorageRoot } from './utils/esbmcPath'
 
 // Autosave can fire every second or so, and a verification run is far from
 // free, so saves are coalesced rather than queued.
@@ -15,6 +16,7 @@ const SAVE_DEBOUNCE_MS = 500
 // your extension is activated the very first time the command is executed
 export function activate (context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "vscode-esbmc" is now active!')
+  setStorageRoot(context.globalStorageUri.fsPath)
   // Register Commands
   context.subscriptions.push(...registerCommands(context))
   context.subscriptions.push(...registerCodeLens())

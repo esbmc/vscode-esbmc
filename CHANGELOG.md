@@ -17,6 +17,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- The installer downloads the asset for the running platform and unpacks it
+  into the extension's storage directory instead of hard-coding the Linux
+  archive and writing to `$HOME/bin`. Windows uses PowerShell to unpack, since
+  it has no `unzip`, and the whole `bin/` directory is kept because
+  `esbmc.exe` needs the `libz3.dll` shipped beside it.
+- One resolver now decides which ESBMC runs, so the reported version and the
+  verified binary can no longer disagree. A user's own ESBMC on `PATH` wins
+  over one the extension installed.
 - Verification output goes to an `ESBMC` output channel instead of a terminal.
 - Python and Solidity files now activate the extension and get the function
   CodeLens. The CodeLens named them `py` and `sol`, which are file extensions
