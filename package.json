@@ -26,6 +26,18 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "solidity",
+        "aliases": [
+          "Solidity",
+          "solidity"
+        ],
+        "extensions": [
+          ".sol"
+        ]
+      }
+    ],
     "configuration": [
       {
         "id": "front-end",
