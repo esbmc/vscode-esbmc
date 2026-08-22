@@ -812,6 +812,21 @@
           }
         ]
       }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "esbmc.trace",
+          "name": "ESBMC Counterexample",
+          "when": "esbmc.hasTrace"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "esbmc.trace",
+        "contents": "Verify a file to see the counterexample here.\n[Verify file](command:vscode-esbmc.verify.file)"
+      }
     ]
   },
   "scripts": {
