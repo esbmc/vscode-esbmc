@@ -854,10 +854,9 @@
     "mindaro-dev.file-downloader"
   ],
   "devDependencies": {
-    "@types/glob": "^7.2.0",
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^22.20.1",
-    "@types/object-hash": "^2.2.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.2.0",
+    "@types/object-hash": "^3.0.6",
     "@types/semver": "^7.3.10",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
@@ -868,8 +867,7 @@
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.2.4",
     "eslint-plugin-promise": "^6.0.0",
-    "glob": "^8.0.3",
-    "mocha": "^10.0.0",
+    "mocha": "^11.8.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -880,7 +878,8 @@
   },
   "overrides": {
     "mocha": {
-      "serialize-javascript": "^7.1.0"
+      "serialize-javascript": "^7.1.0",
+      "diff": "^9.0.0"
     }
   },
   "repository": {
