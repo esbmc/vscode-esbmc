@@ -90,7 +90,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     flags = commentFlags
   } else {
     try {
-      flags = CONFIG_PARSER.parse(overides)
+      flags = CONFIG_PARSER.parse(overides, target.uri)
     } catch (error) {
       vscode.window.showErrorMessage(`ESBMC: ${error}`)
       return
