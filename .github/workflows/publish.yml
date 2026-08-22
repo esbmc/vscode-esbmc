@@ -5,26 +5,15 @@ on:
     tags:
       - 'v*'
 
+env:
+  # Pinned: an unpinned npx resolves the newest release at run time, so a
+  # breaking one would break releases with no change here.
+  VSCE: '@vscode/vsce@3.9.2'
+  OVSX: 'ovsx@1.1.1'
+
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Install Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: npm
-    - run: npm ci
-    - run: xvfb-run -a npm test
-      if: runner.os == 'Linux'
-    - run: npm test
-      if: runner.os != 'Linux'
+    uses: ./.github/workflows/test.yml
 
   publish:
     needs: test
@@ -47,13 +36,13 @@ jobs:
           exit 1
         fi
     - name: Package
-      run: npx --yes @vscode/vsce package --out vscode-esbmc.vsix
+      run: npx --yes "$VSCE" package --out vscode-esbmc.vsix
     - name: Publish to the VS Code Marketplace
-      run: npx --yes @vscode/vsce publish --packagePath vscode-esbmc.vsix
+      run: npx --yes "$VSCE" publish --packagePath vscode-esbmc.vsix
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: Publish to Open VSX
-      run: npx --yes ovsx publish vscode-esbmc.vsix
+      run: npx --yes "$OVSX" publish vscode-esbmc.vsix
       env:
         OVSX_PAT: ${{ secrets.OVSX_PAT }}
     - name: Attach the VSIX to the release

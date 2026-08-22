@@ -9,11 +9,14 @@ export async function getLatestVersion () {
   return redirUrl.split('/').pop()?.replace('v', '')
 }
 
-export async function getInstalledVersion (): Promise<string | undefined> {
-  const esbmc = await resolveEsbmcCommand()
-  if (esbmc === undefined) {
-    return undefined
-  }
+/**
+ * Asks one particular ESBMC for its version.
+ *
+ * @param esbmc the command, already quoted for a shell. Naming the binary
+ * matters right after an install: the resolver would answer with whatever is
+ * on PATH rather than what was just unpacked.
+ */
+export async function readVersion (esbmc: string): Promise<string | undefined> {
   // ESBMC prints its banner on stderr, and exits non-zero on some platforms
   // when given only --version, so both streams are kept.
   const result = await runShellCommand(`${esbmc} --version`)
@@ -23,4 +26,9 @@ export async function getInstalledVersion (): Promise<string | undefined> {
     return undefined
   }
   return match.replace('ESBMC version ', '')
+}
+
+export async function getInstalledVersion (): Promise<string | undefined> {
+  const esbmc = await resolveEsbmcCommand()
+  return esbmc === undefined ? undefined : readVersion(esbmc)
 }

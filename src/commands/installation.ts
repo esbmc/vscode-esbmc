@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 import * as fs from 'fs'
 import { getApi, FileDownloader } from '@microsoft/vscode-file-downloader-api'
-import { getInstalledVersion, getLatestVersion } from '../utils/versions'
-import { quoteShellArg, runShellCommand } from '../utils/commands'
+import { getInstalledVersion, getLatestVersion, readVersion } from '../utils/versions'
+import { quoteShellArg, runProcess } from '../utils/commands'
 import { assetForPlatform, binaryPath, extractCommand, isSupportedPlatform } from '../utils/platform'
-import { installDir } from '../utils/esbmcPath'
+import { installDir, resolveEsbmc } from '../utils/esbmcPath'
 import { compare } from 'compare-versions'
 
 // Only want one of this running at a time
@@ -39,7 +39,20 @@ export async function install (context: vscode.ExtensionContext): Promise<void> 
 
 export async function update (context: vscode.ExtensionContext): Promise<void> {
   await withLock(async () => {
-    const installedVersion = await getInstalledVersion()
+    const esbmc = await resolveEsbmc()
+    if (esbmc === undefined) {
+      vscode.window.showInformationMessage('ESBMC is not installed try running esbmc.install')
+      return
+    }
+    // Installing into storage would change nothing while PATH still wins, so
+    // the update would be offered again on every invocation.
+    if (esbmc.source === 'path') {
+      vscode.window.showInformationMessage(
+        'ESBMC on your PATH is the one that runs, and this extension does not manage it. ' +
+        'Update it where you installed it, or take it off PATH to use esbmc.install.')
+      return
+    }
+    const installedVersion = await readVersion(esbmc.command)
     const latestVersion = await getLatestVersion()
     if (installedVersion === undefined) {
       vscode.window.showInformationMessage('ESBMC is not installed try running esbmc.install')
@@ -96,28 +109,42 @@ async function downloadAndInstall (context: vscode.ExtensionContext): Promise<st
       return undefined
     }
 
-    fs.rmSync(target, { recursive: true, force: true })
-    fs.mkdirSync(target, { recursive: true })
-    const extract = await runShellCommand(extractCommand(archive.fsPath, target, process.platform))
-    if (extract.code !== 0) {
-      vscode.window.showErrorMessage(`Could not unpack ESBMC: ${extract.stderr.trim()}`)
-      return undefined
-    }
+    // Unpacked beside the install rather than over it: a failed extraction
+    // must not be what is left where a working ESBMC used to be.
+    const staging = `${target}.incoming`
+    fs.rmSync(staging, { recursive: true, force: true })
+    fs.mkdirSync(staging, { recursive: true })
+    try {
+      const unpack = extractCommand(archive.fsPath, staging, process.platform)
+      const extract = await runProcess(unpack.file, unpack.args)
+      if (extract.code !== 0) {
+        vscode.window.showErrorMessage(`Could not unpack ESBMC: ${extract.stderr.trim()}`)
+        return undefined
+      }
 
-    const binary = binaryPath(target, process.platform)
-    if (!fs.existsSync(binary)) {
-      vscode.window.showErrorMessage(`Could not find esbmc in ${asset}`)
-      return undefined
-    }
-    if (process.platform !== 'win32') {
-      await runShellCommand(`chmod +x ${quoteShellArg(binary)}`)
-    }
+      const binary = binaryPath(staging, process.platform)
+      if (!fs.existsSync(binary)) {
+        vscode.window.showErrorMessage(`Could not find esbmc in ${asset}`)
+        return undefined
+      }
+      if (process.platform !== 'win32') {
+        await runProcess('chmod', ['+x', binary])
+      }
 
-    const installed = await getInstalledVersion()
-    if (installed === undefined) {
-      vscode.window.showErrorMessage('ESBMC was unpacked but does not run, see the ESBMC output')
+      // The binary just unpacked, not whatever the resolver would pick: an
+      // ESBMC on PATH would answer for it and hide a broken download.
+      const installed = await readVersion(quoteShellArg(binary))
+      if (installed === undefined) {
+        vscode.window.showErrorMessage('ESBMC was unpacked but does not run, see the ESBMC output')
+        return undefined
+      }
+
+      fs.rmSync(target, { recursive: true, force: true })
+      fs.renameSync(staging, target)
+      return installed
+    } finally {
+      fs.rmSync(staging, { recursive: true, force: true })
     }
-    return installed
   } finally {
     statusIcon.dispose()
   }
