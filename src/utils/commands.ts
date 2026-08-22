@@ -19,17 +19,29 @@ export async function executeShellCommand (cmd: string): Promise<string> {
   })
 }
 
+/** Legal in a Windows path, and not expressible as one cmd.exe argument. */
+const UNQUOTABLE_ON_WINDOWS = /["%]/
+
 /**
  * Quotes a value so a shell treats it as one literal argument.
  *
  * Double quotes are not enough on POSIX: `$(...)` and backticks still expand
  * inside them, so a file named `$(rm -rf ~)x.c` would run its own command.
- * `cmd.exe` has no such substitution, and leaves the metacharacters it does
- * have alone inside double quotes.
+ *
+ * `cmd.exe` has no command substitution, but it does expand `%VAR%` inside
+ * double quotes, and a command line offers no escape for either `%` or `"`.
+ * Both are legal in a Windows path, so such a value is refused: quoting it
+ * anyway would run ESBMC against a different file than the one asked for.
+ *
+ * @throws when a Windows path cannot be expressed as one cmd.exe argument.
  */
 export function quoteShellArg (value: string): string {
   if (process.platform === 'win32') {
-    return `"${value.replace(/"/g, '')}"`
+    const unquotable = UNQUOTABLE_ON_WINDOWS.exec(value)
+    if (unquotable !== null) {
+      throw Error(`cmd.exe cannot be passed a path containing ${unquotable[0]}: ${value}`)
+    }
+    return `"${value}"`
   }
   return `'${value.replace(/'/g, "'\\''")}'`
 }

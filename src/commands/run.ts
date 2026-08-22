@@ -42,6 +42,12 @@ function diagnostics (): EsbmcDiagnostics {
   return DIAGNOSTICS
 }
 
+/** `esbmc.editor.timeout`, shared so every ESBMC run is bounded the same way. */
+export function editorTimeoutSeconds (): number {
+  const configured = vscode.workspace.getConfiguration('esbmc.editor').get<number>('timeout', 60)
+  return Number.isFinite(configured) ? Math.max(0, configured) : 60
+}
+
 export function showOutput (): void {
   output().show(true)
 }
@@ -95,8 +101,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   }
 
   const esbmcCmd = await resolveEsbmcCommand()
-  const configured = vscode.workspace.getConfiguration('esbmc.editor').get<number>('timeout', 60)
-  const timeoutSeconds = Number.isFinite(configured) ? Math.max(0, configured) : 60
+  const timeoutSeconds = editorTimeoutSeconds()
 
   // Supersede any run still going: its output would interleave with this one.
   const token = ++runToken
@@ -113,7 +118,17 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   const reportDir = fs.mkdtempSync(path.join(os.tmpdir(), 'esbmc-'))
   const report = path.join(reportDir, 'result.sarif')
   try {
-    const cmd = `${esbmcCmd} ${quoteShellArg(filePath)} ${flags} --sarif-output ${quoteShellArg(report)}`
+    let cmd: string
+    try {
+      cmd = `${esbmcCmd} ${quoteShellArg(filePath)} ${flags} --sarif-output ${quoteShellArg(report)}`
+    } catch (error) {
+      // A path cmd.exe cannot be given. Refusing is the point; say so rather
+      // than verifying whatever the rewritten path names.
+      showStatus('$(error) ESBMC: cannot run')
+      channel.appendLine(`\nESBMC: ${String(error)}`)
+      vscode.window.showErrorMessage(`ESBMC: ${String(error)}`)
+      return
+    }
     channel.appendLine(cmd)
 
     const result = await runShellCommand(cmd, {
