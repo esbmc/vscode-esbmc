@@ -10,10 +10,11 @@ import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { SUPPORTED_EXTENSIONS } from '../languages'
 import { resolveEsbmcCommand } from '../utils/esbmcPath'
+import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
-const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
+/** Shared so the flag report and a run read through one settings cache. */
+export const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
-let OUTPUT: vscode.OutputChannel | undefined
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
 let disposed = false
@@ -22,11 +23,6 @@ let disposed = false
 // diagnostics: a save-triggered run can otherwise overwrite a manual one.
 let runToken = 0
 let killInFlight: (() => void) | undefined
-
-function output (): vscode.OutputChannel {
-  OUTPUT = OUTPUT ?? vscode.window.createOutputChannel('ESBMC')
-  return OUTPUT
-}
 
 function status (): vscode.StatusBarItem {
   if (STATUS === undefined) {
@@ -56,10 +52,9 @@ export function showOutput (): void {
 export function disposeRunState (): void {
   disposed = true
   killInFlight?.()
-  OUTPUT?.dispose()
+  disposeOutput()
   STATUS?.dispose()
   DIAGNOSTICS?.dispose()
-  OUTPUT = undefined
   STATUS = undefined
   DIAGNOSTICS = undefined
 }
@@ -116,7 +111,9 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   diagnostics().clear()
   showStatus('$(loading~spin) ESBMC: verifying')
   const channel = output()
-  channel.clear()
+  // Not cleared: the channel also carries the flag report the user may have
+  // just asked for, and a save-triggered run would wipe it without a word.
+  channel.appendLine(`\n${'\u2500'.repeat(60)}\nESBMC: verifying ${filePath}`)
   channel.show(true)
 
   const workingDir = path.dirname(filePath)

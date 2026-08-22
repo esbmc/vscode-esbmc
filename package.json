@@ -22,7 +22,8 @@
     "onCommand:vscode-esbmc.openExample",
     "onLanguage:python",
     "onLanguage:solidity",
-    "onCommand:vscode-esbmc.showOutput"
+    "onCommand:vscode-esbmc.showOutput",
+    "onCommand:vscode-esbmc.showFlags"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -765,6 +766,10 @@
       {
         "command": "vscode-esbmc.showOutput",
         "title": "ESBMC: Show output"
+      },
+      {
+        "command": "vscode-esbmc.showFlags",
+        "title": "ESBMC: Show current flags"
       }
     ],
     "walkthroughs": [
