@@ -9,7 +9,7 @@ import { parseSarif, resolveFindingPaths, EsbmcFinding } from '../parsers/sarifP
 import { classifyVerdict, statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { TraceView } from '../diagnostics/traceView'
-import { parseGraphmlWitness, TraceStep } from '../parsers/witnessParser'
+import { parseGraphmlWitness, resolveTracePaths, TraceStep } from '../parsers/witnessParser'
 import { SUPPORTED_EXTENSIONS } from '../languages'
 import { resolveEsbmcCommand } from '../utils/esbmcPath'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
@@ -19,6 +19,7 @@ const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
 let TRACE: TraceView | undefined
+let TRACE_VIEW: vscode.Disposable | undefined
 let disposed = false
 
 // Only the newest run may touch the shared channel, status bar and
@@ -39,7 +40,9 @@ function status (): vscode.StatusBarItem {
 function trace (): TraceView {
   if (TRACE === undefined) {
     TRACE = new TraceView()
-    vscode.window.registerTreeDataProvider('esbmc.trace', TRACE)
+    // Keeping the registration: without disposing it, a second provider ends
+    // up registered for esbmc.trace the next time this runs.
+    TRACE_VIEW = vscode.window.registerTreeDataProvider('esbmc.trace', TRACE)
   }
   return TRACE
 }
@@ -59,9 +62,11 @@ export function disposeRunState (): void {
   disposeOutput()
   STATUS?.dispose()
   DIAGNOSTICS?.dispose()
+  TRACE_VIEW?.dispose()
   TRACE?.dispose()
   STATUS = undefined
   DIAGNOSTICS = undefined
+  TRACE_VIEW = undefined
   TRACE = undefined
 }
 
@@ -142,7 +147,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
 
     const findings = result.timedOut ? [] : resolveFindingPaths(readFindings(report, channel), workingDir)
     diagnostics().report(findings)
-    trace().show(readTrace(witness))
+    trace().show(resolveTracePaths(readTrace(witness, channel), workingDir))
 
     // ESBMC prints its verdict on stderr and only its version banner on stdout.
     showStatus(statusText(classifyVerdict({
@@ -159,13 +164,14 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   }
 }
 
-function readTrace (witness: string): TraceStep[] {
+function readTrace (witness: string, channel: vscode.OutputChannel): TraceStep[] {
   if (!fs.existsSync(witness)) {
     return []
   }
   try {
     return parseGraphmlWitness(fs.readFileSync(witness, 'utf8'))
-  } catch {
+  } catch (error) {
+    channel.appendLine(`\nESBMC: could not read the counterexample witness (${String(error)})`)
     return []
   }
 }
