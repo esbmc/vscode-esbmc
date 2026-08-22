@@ -4,8 +4,15 @@ import { resolveEsbmcCommand } from './esbmcPath'
 
 // The latest release redirects to its own tag, so the tag is the version.
 export async function getLatestVersion (): Promise<string | undefined> {
-  const landed = await resolveRedirect('https://github.com/esbmc/esbmc/releases/latest')
-  return landed.split('/').pop()?.replace('v', '')
+  try {
+    const landed = await resolveRedirect('https://github.com/esbmc/esbmc/releases/latest')
+    return landed.split('/').pop()?.replace('v', '')
+  } catch {
+    // Unreachable host or an unresolved redirect. Callers report this as
+    // "could not fetch latest version"; a url read as a version would reach
+    // compare() and throw there instead.
+    return undefined
+  }
 }
 
 export async function getInstalledVersion (): Promise<string | undefined> {
