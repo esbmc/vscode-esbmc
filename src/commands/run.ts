@@ -12,7 +12,8 @@ import { SUPPORTED_EXTENSIONS } from '../languages'
 import { resolveEsbmcCommand } from '../utils/esbmcPath'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
-const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
+/** Shared so the flag report and a run read through one settings cache. */
+export const CONFIG_PARSER: ConfigurationParser = new ConfigurationParser()
 
 let STATUS: vscode.StatusBarItem | undefined
 let DIAGNOSTICS: EsbmcDiagnostics | undefined
@@ -105,7 +106,9 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   diagnostics().clear()
   showStatus('$(loading~spin) ESBMC: verifying')
   const channel = output()
-  channel.clear()
+  // Not cleared: the channel also carries the flag report the user may have
+  // just asked for, and a save-triggered run would wipe it without a word.
+  channel.appendLine(`\n${'\u2500'.repeat(60)}\nESBMC: verifying ${filePath}`)
   channel.show(true)
 
   const workingDir = path.dirname(filePath)
