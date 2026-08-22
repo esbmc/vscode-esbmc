@@ -14,6 +14,17 @@ const FAILS = `int main(void)
 }
 `
 
+const SOLIDITY_FAILS = `// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.5.0;
+
+contract Simple {
+    function f() public pure {
+        uint8 x = 1;
+        assert(x == 2);
+    }
+}
+`
+
 const PASSES = `int main(void)
 {
   int values[4];
@@ -85,5 +96,39 @@ describe('SARIF pipeline against real ESBMC', function () {
     const result = await runShellCommand(`esbmc "${file}" --multi-property --sarif-output "${report}"`)
     assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
     assert.strictEqual(fs.existsSync(report), false)
+  })
+
+  // Issue #12: the same SARIF pipeline has to work for the non-C languages,
+  // since diagnostics are what makes them usable in the editor.
+  it('produces a finding for a Python program', async () => {
+    const file = path.join(dir, 'fails.py')
+    const report = path.join(dir, 'fails-py.sarif')
+    fs.writeFileSync(file, 'values = [0, 1, 2, 3]\nassert values[0] == 1\n')
+    const result = await runShellCommand(`esbmc "${file}" --sarif-output "${report}"`)
+    assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    assert.ok(findings.length > 0, 'no findings for the Python program')
+    assert.strictEqual(findings[0].file, file)
+    assert.strictEqual(findings[0].line, 2)
+  })
+
+  // Solidity needs solc to reach an AST, and ESBMC's Solidity model spins in
+  // an address loop until the unwind is bounded. Both are why this is the one
+  // language the extension supports that cannot be checked unconditionally.
+  it('produces a finding for a Solidity contract', async function () {
+    const file = path.join(dir, 'fails.sol')
+    const report = path.join(dir, 'fails-sol.sarif')
+    fs.writeFileSync(file, SOLIDITY_FAILS)
+    const result = await runShellCommand(
+      `esbmc "${file}" --unwind 2 --no-unwinding-assertions --sarif-output "${report}"`)
+    const transcript = result.stdout + result.stderr
+    if (/solc not found/.test(transcript)) {
+      return this.skip()
+    }
+    assert.match(transcript, /VERIFICATION FAILED/)
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    assert.ok(findings.length > 0, 'no findings for the Solidity contract')
+    assert.strictEqual(findings[0].file, file)
+    assert.strictEqual(findings[0].line, 7, 'the failing assertion is on line 7')
   })
 })
