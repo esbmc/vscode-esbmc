@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
-import { executeShellCommand } from '../utils/commands'
+import * as os from 'os'
+import * as path from 'path'
+import { executeShellCommand, quoteShellArg, runShellCommand } from '../utils/commands'
 import { callOllama } from '../ai/ollamaClient'
+import { editorTimeoutSeconds } from './run'
 
 export async function verifyWithAI (): Promise<void> {
   const editor = vscode.window.activeTextEditor
@@ -22,22 +25,31 @@ export async function verifyWithAI (): Promise<void> {
 
   // Try ESBMC, fallback to $HOME/bin
   let esbmcCmd = 'esbmc'
+  let cmd: string
   try {
-    await executeShellCommand('esbmc --version')
-  } catch {
-    esbmcCmd = '$HOME/bin/esbmc'
+    try {
+      await executeShellCommand('esbmc --version')
+    } catch {
+      esbmcCmd = quoteShellArg(path.join(os.homedir(), 'bin', 'esbmc'))
+    }
+    cmd = `${esbmcCmd} ${quoteShellArg(filePath)}`
+  } catch (error) {
+    channel.appendLine(`ESBMC: ${String(error)}`)
+    vscode.window.showErrorMessage(`ESBMC: ${String(error)}`)
+    return
   }
 
-  let esbmcOutput: string
-  try {
-    esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}"`)
-    if (!esbmcOutput || !esbmcOutput.trim()) {
-      esbmcOutput = await executeShellCommand(`${esbmcCmd} "${filePath}" 2>&1`)
-    }
-  } catch (error: any) {
-    // ESBMC retorna código != 0 quando há violação; ainda assim o output é útil
-    esbmcOutput = String(error)
+  // ESBMC prints its verdict on stderr and exits non-zero on a violation, so
+  // both streams are kept and a non-zero exit is a result, not an error.
+  // Bounded by the same setting a normal run uses: without it a
+  // non-terminating program leaves this waiting forever.
+  const timeoutSeconds = editorTimeoutSeconds()
+  const result = await runShellCommand(cmd, { timeoutMs: timeoutSeconds * 1000 })
+  if (result.timedOut) {
+    channel.appendLine(`\n[INFO] ESBMC was killed after ${timeoutSeconds}s (esbmc.editor.timeout)\n`)
+    return
   }
+  const esbmcOutput = result.stdout + result.stderr
 
   channel.appendLine('=== ESBMC Output ===\n')
   channel.appendLine(esbmcOutput.trim())

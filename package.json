@@ -16,6 +16,7 @@
     "onCommand:vscode-esbmc.verify.file",
     "onCommand:vscode-esbmc.install",
     "onCommand:vscode-esbmc.update",
+    "onCommand:vscode-esbmc.showOutput",
     "onCommand:vscode-esbmc.openExample"
   ],
   "main": "./out/extension.js",
@@ -701,6 +702,26 @@
             "description": "Ollama model name used for analysis and explanation."
           }
         }
+      },
+      {
+        "id": "editor",
+        "title": "Editor Integration",
+        "order": 900,
+        "properties": {
+          "esbmc.editor.verifyOnSave": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Verify a supported file with ESBMC every time it is saved",
+            "order": 1
+          },
+          "esbmc.editor.timeout": {
+            "type": "number",
+            "default": 60,
+            "markdownDescription": "Kill a verification run after this many seconds, a value of `0` lets it run to completion",
+            "order": 2,
+            "minimum": 0
+          }
+        }
       }
     ],
     "commands": [
@@ -719,6 +740,10 @@
       {
         "command": "vscode-esbmc.verify.file.withAI",
         "title": "ESBMC: Verify file with Local AI"
+      },
+      {
+        "command": "vscode-esbmc.showOutput",
+        "title": "ESBMC: Show output"
       },
       {
         "command": "vscode-esbmc.openExample",
@@ -785,8 +810,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "test:package": "mocha --ui bdd out/test/package/**/*.test.js"
+    "test": "node ./out/test/runTest.js"
   },
   "extensionDependencies": [
     "mindaro-dev.file-downloader"
