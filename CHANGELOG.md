@@ -32,6 +32,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
+- Pushing to a pull request now supersedes its previous CI run instead of
+  queueing beside it. Publishing deliberately does not: a second tag must not
+  cancel a release that may already have reached one registry and not the other.
+
 - Dropped `glob` from the test runner, which walks its own directory in a
   dozen lines. Its callback API was removed in v9 and each major since raises
   the Node floor. A test now guards the walk, because a discovery bug makes the

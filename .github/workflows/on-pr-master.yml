@@ -10,6 +10,13 @@ env:
   # breaking one would break packaging with no change here.
   VSCE: '@vscode/vsce@3.9.2'
 
+# Pushing again supersedes the previous run rather than queueing beside it.
+# With a 3-OS matrix plus packaging, a stack of branches otherwise leaves
+# dozens of obsolete jobs holding runners.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     uses: ./.github/workflows/test.yml
