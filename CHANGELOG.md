@@ -70,6 +70,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 
+- Choosing a value that happened to equal the manifest default was silently
+  dropped instead of sent to ESBMC, whose own defaults differ: `boolector`
+  became bitwuzla, and `i386-linux` became the host architecture on macOS and
+  Windows. Explicit choices are now always passed.
+
 - Choosing a solver had no effect if a custom solver path was also set: the
   guard meant to restrict that path to `custom` was written `x || true`, so it
   was always true and the chosen solver flag was dropped. Selecting `custom`

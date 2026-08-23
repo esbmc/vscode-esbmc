@@ -138,6 +138,21 @@ export class ConfigurationParser {
   }
 
   /**
+     * Adds a flag for a setting the user chose explicitly.
+     *
+     * `inspect` only reports settings that were actually written, so a value
+     * present here was chosen even when it equals the manifest default. The
+     * default-suppressing helpers drop those, which silently defers to
+     * ESBMC's own default — and that is bitwuzla rather than boolector, and
+     * the host architecture rather than i386-linux.
+     *
+     * @param flag the flag to be added
+     */
+  private addExplicitFlag (flag: string): void {
+    this.flags.push(flag)
+  }
+
+  /**
      * Adds numeric like ESBMC flag to the set of flags
      *
      * @param value the value of the setting
@@ -495,11 +510,11 @@ export class ConfigurationParser {
         break
       }
       case 'wordLength': {
-        this.addNumericFlag(value, 64, `--${value}`)
+        this.addExplicitFlag(`--${value}`)
         break
       }
       case 'architecture': {
-        this.addStringFlag(value, 'i386-linux', `--${value}`)
+        this.addExplicitFlag(`--${value}`)
         break
       }
       case 'endianness': {
@@ -610,7 +625,7 @@ export class ConfigurationParser {
         if (value !== 'custom') {
           // A custom solver path left over from an earlier choice must not
           // override the solver the user actually picked.
-          this.addStringFlag(value, 'boolector', `--${value}`)
+          this.addExplicitFlag(`--${value}`)
           break
         }
         const customPath = this.flatSectionConfig.customSmtSolverPath
