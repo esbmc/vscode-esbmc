@@ -2,6 +2,7 @@ import { Uri, workspace } from 'vscode'
 import { sha1 } from 'object-hash'
 import { flatten } from './flatten'
 import { mergeConfigScopes } from './configScopes'
+import { quoteShellArg } from '../utils/commands'
 import { SECTIONS } from './sections'
 
 import { Configuration } from '../@types/vscode.configuration'
@@ -239,8 +240,9 @@ export class ConfigurationParser {
     dependentKey: string, dependentValue: any,
     dependentDefaultValue: any, secondaryFlag: string,
     prereqCondition?: boolean): void {
-    // Set prereqCondition is undefined
-    prereqCondition = prereqCondition || true
+    // `|| true` here made the caller-supplied guard dead, which silently
+    // discarded the solver choice whenever a custom solver path was also set.
+    prereqCondition = prereqCondition ?? true
     // Dependent flag is added if the dependentKey is not in the section config
     if (prereqKey in this.flatSectionConfig && !(dependentKey in this.flatSectionConfig) && prereqCondition) {
       this.addGenericFlag(prereqValue, prereqDefaultValue, primaryFlag)
@@ -605,21 +607,20 @@ export class ConfigurationParser {
   private parseSolver (key: string, value:any): void {
     switch (key) {
       case 'smtSolver': {
-        const dependentKey = 'customSmtSolverPath'
-        const dependentDefaultValue = ''
-        const dependentValue = dependentKey in this.flatSectionConfig
-          ? this.flatSectionConfig[dependentKey]
-          : dependentDefaultValue
-        this.addDependentFlags(
-          'smtSolver',
-          value,
-          'boolector',
-                    `--${value}`,
-                    dependentKey,
-                    dependentValue,
-                    dependentDefaultValue,
-                    `--smtlib-solver-prog ${dependentValue}`,
-                    value === 'custom'
+        if (value !== 'custom') {
+          // A custom solver path left over from an earlier choice must not
+          // override the solver the user actually picked.
+          this.addStringFlag(value, 'boolector', `--${value}`)
+          break
+        }
+        const customPath = this.flatSectionConfig.customSmtSolverPath
+        // --smtlib-solver-prog only names the binary. ESBMC never selects the
+        // SMT-LIB backend implicitly, so without --smtlib it silently uses its
+        // own default solver instead.
+        this.addFlag(
+          typeof customPath === 'string' && customPath !== '',
+          `--smtlib --smtlib-solver-prog ${quoteShellArg(String(customPath))}`,
+          'Set esbmc.solver.customSmtSolverPath when esbmc.solver.smtSolver is custom'
         )
         break
       }

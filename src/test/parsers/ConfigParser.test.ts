@@ -2,6 +2,7 @@ import * as assert from 'assert'
 import * as vscode from 'vscode'
 import { Configuration } from '../../@types/vscode.configuration'
 import { ConfigurationParser, SECTIONS } from '../../parsers/configParser'
+import { quoteShellArg } from '../../utils/commands'
 
 const SETTINGS_ROOT = 'esbmc'
 
@@ -689,9 +690,17 @@ describe('ConfigurationParser Test Suite', () => {
         expected: '--bitwuzla'
       },
       {
+        // --smtlib-solver-prog only names the binary; without --smtlib ESBMC
+        // never selects the SMT-LIB backend and quietly uses its own default.
         settings: ['solver.smtSolver', 'solver.customSmtSolverPath'],
         values: ['custom', VALID_PATH],
-        expected: `--smtlib-solver-prog ${VALID_PATH}`
+        expected: `--smtlib --smtlib-solver-prog ${quoteShellArg(VALID_PATH)}`
+      },
+      {
+        // A leftover custom path must not discard the solver actually chosen.
+        settings: ['solver.smtSolver', 'solver.customSmtSolverPath'],
+        values: ['z3', VALID_PATH],
+        expected: '--z3'
       },
       {
         settings: ['solver.smtLibFormat'],
@@ -775,6 +784,21 @@ describe('ConfigurationParser Test Suite', () => {
     validTests.forEach(({ settings, values, expected }) => {
       it(`Checking settings ${JSON.stringify(settings)} with respective valid values ${JSON.stringify(values)}`, async function () {
         await assertCorrectFlagParse(settings, values, expected)
+      })
+    })
+
+    const invalidTests = [
+      {
+        // Without a path there is nothing to run, and the old behaviour passed
+        // ESBMC a `--custom` flag it does not have.
+        settings: ['solver.smtSolver'],
+        values: ['custom']
+      }
+    ]
+
+    invalidTests.forEach(({ settings, values }) => {
+      it(`Checking settings ${JSON.stringify(settings)} with respective invalid values ${JSON.stringify(values)} throws exception`, async function () {
+        await assertIncorrectFlagParseThrows(settings, values)
       })
     })
   })
