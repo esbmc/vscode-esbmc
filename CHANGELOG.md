@@ -4,7 +4,7 @@ All notable changes to the "vscode-esbmc" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.2.0]
 
 ### Added
 

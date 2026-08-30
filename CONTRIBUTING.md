@@ -57,7 +57,7 @@ Publishing is automated. Tag a commit whose `package.json` version matches the
 tag and push it:
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.2.0 && git push origin v0.2.0
 ```
 
 The `Publish` workflow runs the tests on macOS, Linux and Windows, packages the
