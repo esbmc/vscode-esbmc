@@ -83,7 +83,7 @@ describe('SARIF pipeline against real ESBMC', function () {
   it('turns a violation into a finding on the right line', async () => {
     const { file, report, transcript } = await verify(FAILS, 'fails')
     assert.match(transcript, /VERIFICATION FAILED/)
-    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'), file)
     assert.strictEqual(findings.length, 1)
     assert.strictEqual(findings[0].file, file)
     assert.strictEqual(findings[0].line, 5, 'the out-of-bounds write is on line 5')
@@ -119,10 +119,26 @@ describe('SARIF pipeline against real ESBMC', function () {
     fs.writeFileSync(file, 'values = [0, 1, 2, 3]\nassert values[0] == 1\n')
     const result = await runShellCommand(`esbmc "${file}" --sarif-output "${report}"`)
     assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
-    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'), file)
     assert.ok(findings.length > 0, 'no findings for the Python program')
     assert.strictEqual(findings[0].file, file)
     assert.strictEqual(findings[0].line, 2)
+  })
+
+  // The regression this pins: ESBMC synthesizes the Python uncaught-exception
+  // properties at the entry epilogue, which carries no location, so they reach
+  // the report with an empty URI. Dropping them left a failed run with nothing
+  // to show. The assert case above does not exercise this — ESBMC locates it.
+  it('places an unlocated Python exception on the file being verified', async () => {
+    const file = path.join(dir, 'index.py')
+    const report = path.join(dir, 'index-py.sarif')
+    fs.writeFileSync(file, 'values = [1, 2, 3]\ni = 5\nprint(values[i])\n')
+    const result = await runShellCommand(`esbmc "${file}" --sarif-output "${report}"`)
+    assert.match(result.stdout + result.stderr, /VERIFICATION FAILED/)
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'), file)
+    assert.strictEqual(findings.length, 1)
+    assert.strictEqual(findings[0].file, file, 'the unlocated finding lands on the verified file')
+    assert.match(findings[0].message, /uncaught exception: IndexError/)
   })
 
   // Issue #18: the trace view needs the witness to carry both the step
@@ -155,7 +171,7 @@ describe('SARIF pipeline against real ESBMC', function () {
       return this.skip()
     }
     assert.match(transcript, /VERIFICATION FAILED/)
-    const findings = parseSarif(fs.readFileSync(report, 'utf8'))
+    const findings = parseSarif(fs.readFileSync(report, 'utf8'), file)
     assert.ok(findings.length > 0, 'no findings for the Solidity contract')
     assert.strictEqual(findings[0].file, file)
     assert.strictEqual(findings[0].line, 7, 'the failing assertion is on line 7')

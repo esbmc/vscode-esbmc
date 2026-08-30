@@ -3,11 +3,19 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { parseSarif, resolveFindingPaths } from '../../parsers/sarifParser'
 
-const FIXTURE = path.resolve(__dirname, '..', '..', '..', 'src', 'test', 'fixtures', 'violation.sarif')
+const FIXTURES = path.resolve(__dirname, '..', '..', '..', 'src', 'test', 'fixtures')
+
+// Stands in for the file under verification. Only the results that carry no
+// location of their own are placed here.
+const SUBJECT = '/src/subject.c'
 
 // A real report from `esbmc fails.c --sarif-output`, with only the absolute
 // source path made portable.
-const violation = fs.readFileSync(FIXTURE, 'utf8')
+const violation = fs.readFileSync(path.join(FIXTURES, 'violation.sarif'), 'utf8')
+
+// A real report from `esbmc b.py --sarif-output` on ESBMC 8.5.0, verbatim: the
+// Python uncaught-exception properties carry no location at all.
+const pythonUnlocated = fs.readFileSync(path.join(FIXTURES, 'python-unlocated.sarif'), 'utf8')
 
 function sarif (results: unknown[]): string {
   return JSON.stringify({ version: '2.1.0', runs: [{ results }] })
@@ -15,7 +23,7 @@ function sarif (results: unknown[]): string {
 
 describe('parseSarif', () => {
   it('reads a real ESBMC violation report', () => {
-    const findings = parseSarif(violation)
+    const findings = parseSarif(violation, SUBJECT)
     assert.strictEqual(findings.length, 1)
     assert.deepStrictEqual(findings[0], {
       file: '/src/fails.c',
@@ -31,8 +39,8 @@ describe('parseSarif', () => {
   // ESBMC writes no report at all when everything holds, but an empty one has
   // the same meaning: nothing was violated.
   it('returns nothing for a report with no results', () => {
-    assert.deepStrictEqual(parseSarif(sarif([])), [])
-    assert.deepStrictEqual(parseSarif(JSON.stringify({ version: '2.1.0', runs: [] })), [])
+    assert.deepStrictEqual(parseSarif(sarif([]), SUBJECT), [])
+    assert.deepStrictEqual(parseSarif(JSON.stringify({ version: '2.1.0', runs: [] }), SUBJECT), [])
   })
 
   it('reports every violated property', () => {
@@ -41,7 +49,7 @@ describe('parseSarif', () => {
       message: { text: `failure ${line}` },
       locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' }, region: { startLine: line } } }]
     }))
-    assert.deepStrictEqual(parseSarif(sarif(results)).map(f => f.line), [1, 2])
+    assert.deepStrictEqual(parseSarif(sarif(results), SUBJECT).map(f => f.line), [1, 2])
   })
 
   it('keeps the column when ESBMC gives one', () => {
@@ -49,7 +57,7 @@ describe('parseSarif', () => {
       level: 'warning',
       message: { text: 'x' },
       locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' }, region: { startLine: 7, startColumn: 9 } } }]
-    }]))
+    }]), SUBJECT)
     assert.strictEqual(finding.line, 7)
     assert.strictEqual(finding.column, 9)
     assert.strictEqual(finding.severity, 'warning')
@@ -59,7 +67,7 @@ describe('parseSarif', () => {
     const [finding] = parseSarif(sarif([{
       message: { text: 'x' },
       locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' } } }]
-    }]))
+    }]), SUBJECT)
     assert.strictEqual(finding.line, 1)
   })
 
@@ -69,7 +77,7 @@ describe('parseSarif', () => {
         level,
         message: { text: 'x' },
         locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' }, region: { startLine: 1 } } }]
-      }]))
+      }]), SUBJECT)
       assert.strictEqual(finding.severity, level === 'none' ? 'note' : 'error', `level ${String(level)}`)
     }
   })
@@ -83,7 +91,7 @@ describe('parseSarif', () => {
         { id: 'RULE-1', toolComponent: { name: 'MISRA' } },
         { id: '125' }
       ]
-    }]))
+    }]), SUBJECT)
     assert.deepStrictEqual(finding.cwes, ['CWE-787'])
   })
 
@@ -91,22 +99,56 @@ describe('parseSarif', () => {
     const [finding] = parseSarif(sarif([{
       message: { text: 'x' },
       locations: [{ physicalLocation: { artifactLocation: { uri: 'file:///a.c' }, region: { startLine: 1 } } }]
-    }]))
+    }]), SUBJECT)
     assert.strictEqual(finding.file, '/a.c')
   })
 
-  // A result we cannot place in a file would become a diagnostic with nowhere
-  // to go, so it is dropped rather than pinned to the wrong line.
-  it('drops results with no usable location or message', () => {
+  // A result with no message names no property, and one with no locations at
+  // all never reaches the fallback, so neither can become a diagnostic.
+  it('drops results with no message, and results with no locations', () => {
     assert.deepStrictEqual(parseSarif(sarif([
       { message: { text: 'no locations' } },
-      { message: { text: 'no uri' }, locations: [{ physicalLocation: { region: { startLine: 1 } } }] },
       { locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' } } }] }
-    ])), [])
+    ]), SUBJECT), [])
+  })
+
+  // ESBMC 8.5.0 synthesizes the Python uncaught-exception properties at the
+  // entry epilogue, which carries no location, so they arrive unplaceable.
+  it('places an unlocated result on the file being verified', () => {
+    const [finding] = parseSarif(pythonUnlocated, '/src/b.py')
+    assert.strictEqual(finding.file, '/src/b.py')
+    assert.strictEqual(finding.line, 1)
+    assert.strictEqual(finding.message, 'uncaught exception: IndexError')
+  })
+
+  it('places a result whose location has no artifact at all', () => {
+    const [finding] = parseSarif(sarif([{
+      message: { text: 'x' },
+      locations: [{ physicalLocation: { region: { startLine: 3 } } }]
+    }]), SUBJECT)
+    assert.strictEqual(finding.file, SUBJECT)
+    assert.strictEqual(finding.line, 3)
+  })
+
+  // The subject is a fallback, never an override: a located result keeps the
+  // file ESBMC named, which for an included header is not the file verified.
+  it('prefers the location ESBMC gave over the subject', () => {
+    const [finding] = parseSarif(sarif([{
+      message: { text: 'x' },
+      locations: [{ physicalLocation: { artifactLocation: { uri: 'inc/hdr.h' }, region: { startLine: 7 } } }]
+    }]), SUBJECT)
+    assert.strictEqual(finding.file, 'inc/hdr.h')
+    assert.strictEqual(finding.line, 7)
+  })
+
+  // Nothing legitimate passes an empty subject, but a finding on '' resolves
+  // to the directory ESBMC ran in, which is worse than dropping it.
+  it('drops an unlocated result when the subject is empty', () => {
+    assert.deepStrictEqual(parseSarif(pythonUnlocated, ''), [])
   })
 
   it('rejects a report that is not JSON', () => {
-    assert.throws(() => parseSarif('not json'), SyntaxError)
+    assert.throws(() => parseSarif('not json', SUBJECT), SyntaxError)
   })
 })
 

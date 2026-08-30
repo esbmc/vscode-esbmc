@@ -51,6 +51,9 @@ function readIfPresent<T> (file: string, parse: (text: string) => T, fallback: T
  * @throws EsbmcNotFoundError when ESBMC is not installed anywhere.
  */
 export async function verifyFile (file: string, options: VerifyOptions = {}): Promise<VerifyResult> {
+  // Findings are placed relative to this path, so a relative one would resolve
+  // against its own parent and point at a file that does not exist.
+  file = path.resolve(file)
   const esbmc = await resolveEsbmcCommand()
   if (esbmc === undefined) {
     throw new EsbmcNotFoundError()
@@ -84,7 +87,7 @@ export async function verifyFile (file: string, options: VerifyOptions = {}): Pr
 
     const findings = run.timedOut
       ? []
-      : resolveFindingPaths(readIfPresent(report, parseSarif, []), path.dirname(file))
+      : resolveFindingPaths(readIfPresent(report, text => parseSarif(text, file), []), path.dirname(file))
     // Same concern as the findings above: ESBMC emits paths relative to where
     // it ran, so an unresolved trace step points at a file that does not exist
     // — for the editor's trace view and for an agent reading it over MCP.
