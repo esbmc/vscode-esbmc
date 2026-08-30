@@ -1,7 +1,7 @@
 # ESBMC for Visual Studio Code
 
 [![Run tests](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml/badge.svg)](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml)
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/esbmc.vscode-esbmc)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/esbmc.vscode-esbmc.svg)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
 [![Open VSX](https://img.shields.io/open-vsx/v/esbmc/vscode-esbmc)](https://open-vsx.org/extension/esbmc/vscode-esbmc)
 
 Find bugs in C, C++, Python and Solidity without leaving the editor, using

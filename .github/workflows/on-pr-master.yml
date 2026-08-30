@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
 
 env:
   # Pinned: an unpinned npx resolves the newest release at run time, so a
