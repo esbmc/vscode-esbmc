@@ -4,15 +4,15 @@
 [![VS Code Marketplace](https://vsmarketplacebadges.dev/version/esbmc.vscode-esbmc.svg)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
 [![Open VSX](https://img.shields.io/open-vsx/v/esbmc/vscode-esbmc)](https://open-vsx.org/extension/esbmc/vscode-esbmc)
 
-Find bugs in C, C++, Python and Solidity without leaving the editor, using
-[ESBMC](http://esbmc.org/) — a bounded model checker that proves properties
+Find bugs in C, C++, Python, and Solidity without leaving the editor, using
+[ESBMC](http://esbmc.org/), an SMT-based model checker that proves properties
 rather than sampling inputs. A failure comes with a counterexample; a success
 means no execution violates the property, not merely that none was found.
 
 ![Verification failing: a squiggle on the out-of-bounds write, one violated property in the Problems panel, and VERIFICATION FAILED in the ESBMC output channel.](examples/buffer-overflow-failed.jpeg)
 
 The bundled `examples/buffer-overflow.c` writes one element past the end of its
-array. ESBMC names the property, the line and the CWEs it corresponds to.
+array. ESBMC names the property, the line, and the corresponding CWEs.
 
 ## Install
 
@@ -24,7 +24,7 @@ array. ESBMC names the property, the line and the CWEs it corresponds to.
 
 The extension downloads the release build for your platform and unpacks it into
 its own storage directory, so nothing is written to `$HOME/bin` and no `PATH`
-change is needed. An ESBMC already on your `PATH` is used in preference.
+change is needed. ESBMC already on your `PATH` is used by default.
 
 New to it? **Help → Welcome → Get started with ESBMC** walks through installing
 ESBMC, opening a bundled example and reading the counterexample it produces.
