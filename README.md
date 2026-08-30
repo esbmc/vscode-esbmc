@@ -1,8 +1,6 @@
 # ESBMC for Visual Studio Code
 
-[![Run tests](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml/badge.svg)](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml)
-[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/esbmc.vscode-esbmc.svg)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
-[![Open VSX](https://img.shields.io/open-vsx/v/esbmc/vscode-esbmc)](https://open-vsx.org/extension/esbmc/vscode-esbmc)
+[![Run tests](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml/badge.svg?branch=master&event=push)](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml?query=branch%3Amaster+event%3Apush)
 
 Find bugs in C, C++, Python, and Solidity without leaving the editor, using
 [ESBMC](http://esbmc.org/), an SMT-based model checker that proves properties
@@ -16,11 +14,17 @@ array. ESBMC names the property, the line, and the corresponding CWEs.
 
 ## Install
 
-1. Install this extension from the
-   [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
-   or [Open VSX](https://open-vsx.org/extension/esbmc/vscode-esbmc).
-2. Run **ESBMC: Install latest version** from the Command Palette
-   (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
+Not on the VS Code Marketplace or Open VSX yet. Until it is, build the VSIX
+from a clone and install that:
+
+```sh
+npm ci
+npx @vscode/vsce package --out vscode-esbmc.vsix
+code --install-extension vscode-esbmc.vsix
+```
+
+Then run **ESBMC: Install latest version** from the Command Palette
+(<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
 
 The extension downloads the release build for your platform and unpacks it into
 its own storage directory, so nothing is written to `$HOME/bin` and no `PATH`

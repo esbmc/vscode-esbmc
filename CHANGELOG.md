@@ -40,8 +40,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - The test workflow now also runs on pushes to master, so a merge that breaks
   master is reported rather than silently passing.
 - Pushing to a pull request now supersedes its previous CI run instead of
-  queueing beside it. Publishing deliberately does not: a second tag must not
-  cancel a release that may already have reached one registry and not the other.
+  queueing beside it. Master is exempt for the same reason publishing is: a
+  second commit landing there would cancel the first commit's run, leaving it
+  untested and the README badge reporting "failing" for a run nobody failed.
+  Publishing deliberately does not cancel either, since a second tag must not
+  stop a release that may already have reached one registry and not the other.
+- The README no longer links to the Marketplace or Open VSX listings, and
+  describes building the VSIX from a clone instead. Neither listing exists
+  until the first publish, so both links and both version badges resolved to
+  404s on the front page.
 
 - Dropped `glob` from the test runner, which walks its own directory in a
   dozen lines. Its callback API was removed in v9 and each major since raises
