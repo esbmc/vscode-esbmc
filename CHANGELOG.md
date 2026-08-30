@@ -74,6 +74,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Fixed
 
+- Verifying a Python file reported a failure with no squiggle and no Problems
+  entry. ESBMC synthesizes the uncaught-exception properties
+  (`ZeroDivisionError`, `IndexError`, `ValueError`) at the entry epilogue,
+  which carries no source location, so they reach the SARIF report with an
+  empty URI and were discarded. They are now placed on the file being
+  verified. A property ESBMC does locate is unaffected.
+
 - Choosing a value that happened to equal the manifest default was silently
   dropped instead of sent to ESBMC, whose own defaults differ: `boolector`
   became bitwuzla, and `i386-linux` became the host architecture on macOS and

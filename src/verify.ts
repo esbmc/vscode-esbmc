@@ -51,6 +51,9 @@ function readIfPresent<T> (file: string, parse: (text: string) => T, fallback: T
  * @throws EsbmcNotFoundError when ESBMC is not installed anywhere.
  */
 export async function verifyFile (file: string, options: VerifyOptions = {}): Promise<VerifyResult> {
+  // Findings are placed relative to this path, so a relative one would resolve
+  // against its own parent and point at a file that does not exist.
+  file = path.resolve(file)
   const esbmc = await resolveEsbmcCommand()
   if (esbmc === undefined) {
     throw new EsbmcNotFoundError()
