@@ -26,7 +26,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
   produce, and offers to copy it.
 - A tag-triggered workflow that runs the test matrix, packages the extension
   and publishes it to the VS Code Marketplace and Open VSX, then attaches the
-  VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
+  VSIX to the release. The Marketplace side authenticates with Microsoft Entra
+  ID rather than a personal access token, since Azure DevOps retires global
+  PATs on 2026-12-01; Open VSX still uses an `OVSX_PAT` secret.
 - Pull requests now package the extension as well as testing it, and check
   that the walkthrough assets are still included.
 - An Apache-2.0 `LICENSE`, matching the licence ESBMC applies to its own
