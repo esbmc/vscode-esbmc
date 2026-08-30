@@ -1,0 +1,18 @@
+# Sources and build tooling; the compiled extension in out/ is what ships.
+src/**
+out/test/**
+out/**/*.map
+tsconfig.json
+.eslintrc.json
+vsc-extension-quickstart.md
+
+# Repository plumbing.
+.claude/**
+.github/**
+.vscode/**
+.vscode-test/**
+.gitignore
+**/*.vsix
+
+# examples/ and walkthroughs/ are deliberately NOT ignored: the Welcome
+# walkthrough reads them from the installed extension directory.

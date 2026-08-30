@@ -1,120 +1,151 @@
 import * as vscode from 'vscode'
+import * as fs from 'fs'
 import { getApi, FileDownloader } from '@microsoft/vscode-file-downloader-api'
-import { getInstalledVersion, getLatestVersion } from '../utils/versions'
-import { executeShellCommand } from '../utils/commands'
+import { getInstalledVersion, getLatestVersion, readVersion } from '../utils/versions'
+import { quoteShellArg, runProcess } from '../utils/commands'
+import { assetForPlatform, binaryPath, extractCommand, isSupportedPlatform } from '../utils/platform'
+import { installDir, resolveEsbmc } from '../utils/esbmcPath'
 import { compare } from 'compare-versions'
 
 // Only want one of this running at a time
 let LOCK = false
 
-export async function install (context: vscode.ExtensionContext) {
+async function withLock (work: () => Promise<void>): Promise<void> {
   if (LOCK) {
     return
   }
   LOCK = true
-  let installedVersion = await getInstalledVersion()
-  if (installedVersion === undefined) {
-    const { file, downloadingStatusIcon }: { file: vscode.Uri; downloadingStatusIcon: vscode.StatusBarItem } = await downloadEsbmc(context)
-    if (file === undefined) {
-      vscode.window.showErrorMessage('Could not download ESBMC')
-      LOCK = false
-      return
-    }
-    const filePath = file.fsPath
-    const installed = await installFile(filePath)
-    if (!installed) { return }
-    downloadingStatusIcon.hide()
-    // Check that it has effectively installed
-    installedVersion = await getInstalledVersion()
-    if (installedVersion !== undefined) {
-      vscode.window.showInformationMessage(`Installed ESBMC ${installedVersion}`)
-    } else {
-      vscode.window.showInformationMessage('Could not install ESBMC, see terminal for output')
-    }
-  } else {
-    vscode.window.showInformationMessage(`ESBMC ${installedVersion} already installed, try esbmc.update to get the latest version`)
+  try {
+    await work()
+  } finally {
+    LOCK = false
   }
-  LOCK = false
 }
 
-export async function update (context: vscode.ExtensionContext) {
-  if (LOCK) {
-    return
-  }
-  LOCK = true
-  const installedVersion = await getInstalledVersion()
-  const latestVersion = await getLatestVersion()
-  if (installedVersion === undefined) {
-    vscode.window.showInformationMessage('ESBMC is not installed try running esbmc.install')
-    LOCK = false
-    return
-  }
-  if (latestVersion === undefined) {
-    vscode.window.showInformationMessage('ESBMC could not fetch latest version')
-    LOCK = false
-    return
-  }
-  if (compare(latestVersion, installedVersion, '>')) {
-    const { file, downloadingStatusIcon }: { file: vscode.Uri; downloadingStatusIcon: vscode.StatusBarItem } = await downloadEsbmc(context)
-    if (file === undefined) {
-      vscode.window.showErrorMessage('Could not download ESBMC')
-      LOCK = false
-      return
-    }
-    const filePath = file.fsPath
-    const installed = await installFile(filePath)
-    if (!installed) { return }
-    downloadingStatusIcon.hide()
-    const deleteOldCommand = 'rm $HOME/bin/esbmc.old'
-    const reinstateOldCommand = 'mv $HOME/bin/esbmc.old $HOME/bin/esbmc'
-    // Check that it has effectively installed
+export async function install (context: vscode.ExtensionContext): Promise<void> {
+  await withLock(async () => {
     const installedVersion = await getInstalledVersion()
     if (installedVersion !== undefined) {
-      await executeShellCommand(deleteOldCommand)
-      vscode.window.showInformationMessage(`Updated ESBMC to ${installedVersion}`)
-    } else {
-      await executeShellCommand(reinstateOldCommand)
-      vscode.window.showInformationMessage('Could not update ESBMC, see terminal for output')
+      vscode.window.showInformationMessage(
+        `ESBMC ${installedVersion} already installed, try esbmc.update to get the latest version`)
+      return
     }
-  } else {
-    vscode.window.showInformationMessage('ESBMC is up-to-date')
+    const version = await downloadAndInstall(context)
+    if (version !== undefined) {
+      vscode.window.showInformationMessage(`Installed ESBMC ${version}`)
+    }
+  })
+}
+
+export async function update (context: vscode.ExtensionContext): Promise<void> {
+  await withLock(async () => {
+    const esbmc = await resolveEsbmc()
+    if (esbmc === undefined) {
+      vscode.window.showInformationMessage('ESBMC is not installed try running esbmc.install')
+      return
+    }
+    // Installing into storage would change nothing while PATH still wins, so
+    // the update would be offered again on every invocation.
+    if (esbmc.source === 'path') {
+      vscode.window.showInformationMessage(
+        'ESBMC on your PATH is the one that runs, and this extension does not manage it. ' +
+        'Update it where you installed it, or take it off PATH to use esbmc.install.')
+      return
+    }
+    const installedVersion = await readVersion(esbmc.command)
+    const latestVersion = await getLatestVersion()
+    if (installedVersion === undefined) {
+      vscode.window.showInformationMessage('ESBMC is not installed try running esbmc.install')
+      return
+    }
+    if (latestVersion === undefined) {
+      vscode.window.showInformationMessage('ESBMC could not fetch latest version')
+      return
+    }
+    if (!compare(latestVersion, installedVersion, '>')) {
+      vscode.window.showInformationMessage('ESBMC is up-to-date')
+      return
+    }
+    const version = await downloadAndInstall(context)
+    if (version !== undefined) {
+      vscode.window.showInformationMessage(`Updated ESBMC to ${version}`)
+    }
+  })
+}
+
+/**
+ * Downloads the build for this platform and unpacks it into the extension's
+ * own storage. The whole `bin/` directory is kept: on Windows `esbmc.exe`
+ * needs the `libz3.dll` shipped beside it.
+ *
+ * @returns the installed version, or undefined if anything went wrong.
+ */
+async function downloadAndInstall (context: vscode.ExtensionContext): Promise<string | undefined> {
+  if (!isSupportedPlatform(process.platform)) {
+    vscode.window.showErrorMessage(
+      `ESBMC: no build is published for ${process.platform}. Use Remote-SSH, WSL or a Dev Container.`)
+    return undefined
   }
-  LOCK = false
-}
-async function downloadEsbmc (context: vscode.ExtensionContext) {
-  const fileDownloader: FileDownloader = await getApi()
-  const downloadingStatusIcon = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0)
-  downloadingStatusIcon.text = '$(loading~spin) Installing ESBMC '
-  downloadingStatusIcon.show()
-  const file: vscode.Uri = await fileDownloader.downloadFile(
-    vscode.Uri.parse('https://github.com/esbmc/esbmc/releases/latest/download/ESBMC-Linux.zip'),
-    'ESBMC-Linux.zip',
-    context
-  )
-  return { file, downloadingStatusIcon }
-}
 
-async function installFile (filePath: string) {
-  let out
-  const setupBinDirCommand = 'mkdir -p "$HOME/bin"'
-  const renameOldCommand = 'if [ -f "$HOME/bin/esbmc" ]; then mv "$HOME/bin/esbmc" "$HOME/bin/esbmc.old"; fi'
-  const setupInstallLocationCommand = 'rm -rf "$HOME/bin/esbmc-folder" && mkdir -p "$HOME/bin/esbmc-folder"'
-  const unzipCommand = `unzip -o "${filePath}" -d "$HOME/bin/esbmc-folder"`
-  const moveCommand = 'mv "$HOME/bin/esbmc-folder/bin/esbmc" "$HOME/bin/esbmc"'
-  const chmodCommand = 'chmod +x "$HOME/bin/esbmc"'
-  const cleanupCommand = `rm -rf "$HOME/bin/esbmc-folder" "${filePath}"`
+  const target = installDir()
+  if (target === undefined) {
+    vscode.window.showErrorMessage('ESBMC: the extension is not activated, cannot install')
+    return undefined
+  }
 
+  const asset = assetForPlatform(process.platform)
+  const statusIcon = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0)
+  statusIcon.text = '$(loading~spin) Installing ESBMC '
+  statusIcon.show()
   try {
-    out = await executeShellCommand(setupBinDirCommand)
-    out = await executeShellCommand(renameOldCommand)
-    out = await executeShellCommand(setupInstallLocationCommand)
-    out = await executeShellCommand(unzipCommand)
-    out = await executeShellCommand(moveCommand)
-    out = await executeShellCommand(chmodCommand)
-    out = await executeShellCommand(cleanupCommand)
-  } catch (error) {
-    vscode.window.showInformationMessage(`Could not update ESBMC\n ${out}`)
-    return false
+    const fileDownloader: FileDownloader = await getApi()
+    const archive = await fileDownloader.downloadFile(
+      vscode.Uri.parse(`https://github.com/esbmc/esbmc/releases/latest/download/${asset}`),
+      asset,
+      context
+    )
+    if (archive === undefined) {
+      vscode.window.showErrorMessage('Could not download ESBMC')
+      return undefined
+    }
+
+    // Unpacked beside the install rather than over it: a failed extraction
+    // must not be what is left where a working ESBMC used to be.
+    const staging = `${target}.incoming`
+    fs.rmSync(staging, { recursive: true, force: true })
+    fs.mkdirSync(staging, { recursive: true })
+    try {
+      const unpack = extractCommand(archive.fsPath, staging, process.platform)
+      const extract = await runProcess(unpack.file, unpack.args)
+      if (extract.code !== 0) {
+        vscode.window.showErrorMessage(`Could not unpack ESBMC: ${extract.stderr.trim()}`)
+        return undefined
+      }
+
+      const binary = binaryPath(staging, process.platform)
+      if (!fs.existsSync(binary)) {
+        vscode.window.showErrorMessage(`Could not find esbmc in ${asset}`)
+        return undefined
+      }
+      if (process.platform !== 'win32') {
+        await runProcess('chmod', ['+x', binary])
+      }
+
+      // The binary just unpacked, not whatever the resolver would pick: an
+      // ESBMC on PATH would answer for it and hide a broken download.
+      const installed = await readVersion(quoteShellArg(binary))
+      if (installed === undefined) {
+        vscode.window.showErrorMessage('ESBMC was unpacked but does not run, see the ESBMC output')
+        return undefined
+      }
+
+      fs.rmSync(target, { recursive: true, force: true })
+      fs.renameSync(staging, target)
+      return installed
+    } finally {
+      fs.rmSync(staging, { recursive: true, force: true })
+    }
+  } finally {
+    statusIcon.dispose()
   }
-  return true
 }

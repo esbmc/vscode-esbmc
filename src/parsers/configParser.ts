@@ -1,30 +1,16 @@
-import { workspace } from 'vscode'
+import { Uri, workspace } from 'vscode'
 import { sha1 } from 'object-hash'
-import { flatten } from 'flatten-anything'
+import { flatten } from './flatten'
+import { mergeConfigScopes } from './configScopes'
+import { quoteShellArg } from '../utils/commands'
+import { SECTIONS } from './sections'
 
 import { Configuration } from '../@types/vscode.configuration'
 
-export const SECTIONS = [
-  'bmc',
-  'concurrencyChecking',
-  'frontEnd',
-  'kinduction',
-  'propertyChecking',
-  'solver',
-  'trace'
-]
+export { SECTIONS }
 
 export class ConfigurationParser {
   private _root: string = 'esbmc'
-  private _sections = [
-    'bmc',
-    'concurrencyChecking',
-    'frontEnd',
-    'kinduction',
-    'propertyChecking',
-    'solver',
-    'trace'
-  ]
 
   private cachedConfigHash: string
   private cachedOveridesHash: string
@@ -44,11 +30,14 @@ export class ConfigurationParser {
 
   /**
      * Parses ESBMC settings
+     *
+     * @param resource the file being verified. Folder settings only reach
+     * `inspect` when a resource identifies which folder to read them from.
      * @returns flags used to run ESBMC
      */
-  public parse (overides?: Configuration): string {
+  public parse (overides?: Configuration, resource?: Uri): string {
     overides = overides || {}
-    const workspaceConfig = workspace.getConfiguration(this._root)
+    const workspaceConfig = workspace.getConfiguration(this._root, resource)
     const hashConfig = sha1(workspaceConfig)
     const hashOverides = sha1(overides)
     // Check to see if incoming object hasn't changed and avoid redundant parsing
@@ -57,9 +46,14 @@ export class ConfigurationParser {
     }
     this.flags = []
     // Parse each section
-    for (const section of this._sections) {
+    for (const section of SECTIONS) {
       const sectionConfig = workspaceConfig.inspect<Configuration>(section)
-      let sectionChangedValues = sectionConfig?.globalValue || {}
+      // User, then workspace, then folder: the narrowest scope the user set wins.
+      let sectionChangedValues = mergeConfigScopes(
+        sectionConfig?.globalValue,
+        sectionConfig?.workspaceValue,
+        sectionConfig?.workspaceFolderValue
+      )
       // If overrides are present that arent in the updated values, add them
       this.overides = overides
       if (section in this.overides) {
@@ -141,6 +135,21 @@ export class ConfigurationParser {
     } else {
       this.flags.push(flag)
     }
+  }
+
+  /**
+     * Adds a flag for a setting the user chose explicitly.
+     *
+     * `inspect` only reports settings that were actually written, so a value
+     * present here was chosen even when it equals the manifest default. The
+     * default-suppressing helpers drop those, which silently defers to
+     * ESBMC's own default — and that is bitwuzla rather than boolector, and
+     * the host architecture rather than i386-linux.
+     *
+     * @param flag the flag to be added
+     */
+  private addExplicitFlag (flag: string): void {
+    this.flags.push(flag)
   }
 
   /**
@@ -246,8 +255,9 @@ export class ConfigurationParser {
     dependentKey: string, dependentValue: any,
     dependentDefaultValue: any, secondaryFlag: string,
     prereqCondition?: boolean): void {
-    // Set prereqCondition is undefined
-    prereqCondition = prereqCondition || true
+    // `|| true` here made the caller-supplied guard dead, which silently
+    // discarded the solver choice whenever a custom solver path was also set.
+    prereqCondition = prereqCondition ?? true
     // Dependent flag is added if the dependentKey is not in the section config
     if (prereqKey in this.flatSectionConfig && !(dependentKey in this.flatSectionConfig) && prereqCondition) {
       this.addGenericFlag(prereqValue, prereqDefaultValue, primaryFlag)
@@ -500,11 +510,11 @@ export class ConfigurationParser {
         break
       }
       case 'wordLength': {
-        this.addNumericFlag(value, 64, `--${value}`)
+        this.addExplicitFlag(`--${value}`)
         break
       }
       case 'architecture': {
-        this.addStringFlag(value, 'i386-linux', `--${value}`)
+        this.addExplicitFlag(`--${value}`)
         break
       }
       case 'endianness': {
@@ -612,21 +622,20 @@ export class ConfigurationParser {
   private parseSolver (key: string, value:any): void {
     switch (key) {
       case 'smtSolver': {
-        const dependentKey = 'customSmtSolverPath'
-        const dependentDefaultValue = ''
-        const dependentValue = dependentKey in this.flatSectionConfig
-          ? this.flatSectionConfig[dependentKey]
-          : dependentDefaultValue
-        this.addDependentFlags(
-          'smtSolver',
-          value,
-          'boolector',
-                    `--${value}`,
-                    dependentKey,
-                    dependentValue,
-                    dependentDefaultValue,
-                    `--smtlib-solver-prog ${dependentValue}`,
-                    value === 'custom'
+        if (value !== 'custom') {
+          // A custom solver path left over from an earlier choice must not
+          // override the solver the user actually picked.
+          this.addExplicitFlag(`--${value}`)
+          break
+        }
+        const customPath = this.flatSectionConfig.customSmtSolverPath
+        // --smtlib-solver-prog only names the binary. ESBMC never selects the
+        // SMT-LIB backend implicitly, so without --smtlib it silently uses its
+        // own default solver instead.
+        this.addFlag(
+          typeof customPath === 'string' && customPath !== '',
+          `--smtlib --smtlib-solver-prog ${quoteShellArg(String(customPath))}`,
+          'Set esbmc.solver.customSmtSolverPath when esbmc.solver.smtSolver is custom'
         )
         break
       }

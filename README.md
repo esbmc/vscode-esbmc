@@ -1,337 +1,154 @@
 # ESBMC for Visual Studio Code
 
-This README explains how to go from the extension source code to a working ESBMC integration inside Visual Studio Code on **Linux**, incorporating the lessons learned from the test log in `Teste_ESBMC.txt`.
+[![Run tests](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml/badge.svg)](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/esbmc.vscode-esbmc)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
+[![Open VSX](https://img.shields.io/open-vsx/v/esbmc/vscode-esbmc)](https://open-vsx.org/extension/esbmc/vscode-esbmc)
 
----
+Find bugs in C, C++, Python and Solidity without leaving the editor, using
+[ESBMC](http://esbmc.org/) — a bounded model checker that proves properties
+rather than sampling inputs. A failure comes with a counterexample; a success
+means no execution violates the property, not merely that none was found.
 
-## 1. Overview
+## Install
 
-The ESBMC VS Code extension allows you to:
+1. Install this extension from the
+   [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
+   or [Open VSX](https://open-vsx.org/extension/esbmc/vscode-esbmc).
+2. Run **ESBMC: Install latest version** from the Command Palette
+   (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
 
-- Run ESBMC on the **current C/C++ file** directly from the editor.
-- Install (download + unpack) the **latest ESBMC** binary on Linux using a dedicated command.
-- See ESBMC results in the integrated VS Code terminal.
+The extension downloads the release build for your platform and unpacks it into
+its own storage directory, so nothing is written to `$HOME/bin` and no `PATH`
+change is needed. An ESBMC already on your `PATH` is used in preference.
 
-Once the extension is installed, **Help → Welcome → Get started with ESBMC**
-walks through installing ESBMC, opening the bundled `examples/buffer-overflow.c`
-and reading the counterexample it produces.
+New to it? **Help → Welcome → Get started with ESBMC** walks through installing
+ESBMC, opening a bundled example and reading the counterexample it produces.
 
-This document assumes you are using a Debian/Ubuntu-based distribution and the **bash** shell.
+## How it works
 
----
+Verification runs ESBMC over the open file, with flags built from your
+settings, and reports the result three ways:
 
-## 2. Requirements
+- **Problems panel and squiggles** — each violated property is placed on the
+  line that violates it, read from ESBMC's SARIF report rather than scraped
+  from its log.
+- **Status bar** — the verdict, and how many properties failed. Click it to
+  open the full output.
+- **ESBMC Counterexample view** — the steps that reach the violation, each
+  navigating to its line and showing the variable values ESBMC pinned there.
+  It appears in the Explorer once a run produces a trace.
+- **ESBMC output channel** — the command line that ran, and everything ESBMC
+  printed.
 
-Before building and using the extension, make sure you have:
+Run **ESBMC: Show current flags** to see the command line your settings produce
+before running anything.
 
-- **Linux** (tested on Ubuntu-based systems).
-- **Visual Studio Code** installed.
-- **curl** and **git** (for downloads and version control).
-- **unzip** installed on your system (required for automatic ESBMC installation).
-- **Node.js (LTS)** and **npm**, installed via **nvm (Node Version Manager)**.
-- **vsce** (VS Code Extension Manager) to package the extension as a `.vsix`.
+## Commands
 
----
+| Command | What it does |
+| --- | --- |
+| `ESBMC: Verify file` | Verify the active file |
+| `ESBMC: Show current flags` | Show the flags the current settings produce |
+| `ESBMC: Show output` | Open the ESBMC output channel |
+| `ESBMC: Install latest version` | Download and install ESBMC |
+| `ESBMC: Update to latest version` | Update an existing install |
+| `ESBMC: Open example program` | Open the bundled example |
+| `ESBMC: Verify file with Local AI` | Verify, then explain the counterexample with a local model |
 
-## 3. Step 1 – Prepare the development environment
+A CodeLens above each function verifies that function on its own.
 
-### 3.1 Install essential tools
+## Settings
 
-Open a terminal and run:
+Two settings control the editor integration:
 
-```bash
-sudo apt update
-sudo apt install curl git unzip -y
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `esbmc.editor.verifyOnSave` | `false` | Verify a supported file every time it is saved |
+| `esbmc.editor.timeout` | `60` | Kill a run after this many seconds; `0` waits indefinitely |
+
+Everything else maps to an ESBMC flag, grouped under **Front End**, **BMC**,
+**Solver**, **Property Checking**, **k-Induction**, **Concurrency Checking**
+and **AI Integration** in the Settings UI. Each value documents the flag it
+produces. Only settings that differ from their default emit anything, which is
+why **ESBMC: Show current flags** exists.
+
+## Use ESBMC from an AI agent
+
+The extension ships an MCP server exposing a `verify` tool, so agents in
+Claude Code, Cursor, Copilot agent mode and Cline can run ESBMC themselves and
+read the counterexample. Point the agent at the entry point inside the
+installed extension:
+
+```json
+{
+  "mcpServers": {
+    "esbmc": {
+      "command": "node",
+      "args": ["<extension-path>/out/mcp/main.js"]
+    }
+  }
+}
 ```
 
-### 3.2 Install Node.js LTS using nvm
-#### 3.2.1. **Install `nvm`:**
+`<extension-path>` is what **Developer: Show Running Extensions** reports for
+this extension. The tool takes a `file`, and optionally `flags` and
+`timeoutSeconds`; it answers with the verdict, each violated property and its
+location, and the counterexample trace.
 
-   ```bash
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-   ```
+## Remote development
 
-#### 3.2.2. **Load `nvm` into the current shell:**
-  
-   ```bash
-   source ~/.bashrc
-   ```
+The extension declares `extensionKind: ["workspace"]`, so with **Remote-SSH**,
+**WSL** or **Dev Containers** it runs where the code is rather than on the
+local UI host. ESBMC is installed and executed on the remote machine — the
+supported route if you want a Linux ESBMC from a Windows or macOS desktop.
 
-#### 3.2.3. **Install Node.js LTS:**
+## Local AI explanations (optional)
 
-   ```bash
-   nvm install --lts
-   ```
+**ESBMC: Verify file with Local AI** runs ESBMC and then asks a local model to
+explain the counterexample and suggest a fix. It is fully offline, through
+[Ollama](https://ollama.ai/), and entirely optional.
 
-#### 3.2.4. **Verify `node` and `npm`:**
+1. Install Ollama and start it:
 
-   ```bash
-   node -v
-   npm -v
-   ```
-
-You should see version numbers for Node.js and npm without errors.
-
----
-
-## 4. Step 2 – Obtain the extension source code
-
-Download or clone the ESBMC VS Code extension repository and move into the project folder. For example:
-
-```bash
-git clone https://github.com/esbmc/vscode-esbmc.git
-cd vscode-esbmc
-```
-
-The exact directory name may vary; just ensure you are in the folder that contains `package.json`.
-
----
-
-## 5. Step 3 – Install project dependencies
-
-Install the required npm packages with:
-
-```bash
-npm install
-```
-
-Notes based on the test:
-
-- This step **worked correctly**.
-- `npm audit` should report no vulnerabilities. If it reports some, check
-  whether the affected package is a runtime `dependency` before assuming it is
-  harmless — only the build and test toolchain is exempt.
-
-  ```bash
-  npm audit
-  ```
-
-  Note that `npm audit fix` is not always the answer: `serialize-javascript` is
-  pinned through `overrides` because `npm audit fix` proposes an unhelpful mocha
-  downgrade instead. Dependabot opens weekly update pull requests, so the
-  lockfile should not drift far behind.
-
----
-
-## 6. Step 4 – Compile the TypeScript code
-
-Compile the extension (TypeScript → JavaScript) with:
-
-```bash
-npm run compile
-```
-
-### 6.1 Handling “Permission denied” for `tsc`
-
-If you see a `Permission denied` error when running `npm run compile`, fix the permissions for the TypeScript compiler and re-run the command:
-
-```bash
-chmod +x ./node_modules/.bin/tsc
-npm run compile
-```
-
-After a successful compilation, a directory named `out` will be created in the project folder.
-
----
-
-## 7. Step 5 – Package the extension as a `.vsix`
-
-### 7.1 Install `vsce` globally
-
-Use npm to install `vsce`:
-
-```bash
-npm install -g @vscode/vsce
-```
-
-### 7.2 Create the `.vsix` package
-
-From the root of the project (where `package.json` is located), run:
-
-```bash
-vsce package
-```
-
-Typical behavior:
-
-- `vsce` may ask or warn about:
-  - `README.md` contents,
-  - missing `LICENSE`,
-  - missing `repository` field.
-- You can confirm the prompts with `y` to continue.
-
-At the end, you should see a file such as:
-
-```text
-vscode-esbmc-0.1.0.vsix
-```
-
-(or another versioned name) generated in the current directory.
-
----
-
-## 8. Step 6 – Install the `.vsix` in Visual Studio Code
-
-1. Open **Visual Studio Code**.
-2. Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> to open the **Command Palette**.
-3. Run **“Extensions: Install from VSIX…”**.
-4. Navigate to the `.vsix` file you created (e.g. `vscode-esbmc-0.1.0.vsix`) and select it.
-5. After installation, click **“Reload”** to restart VS Code and activate the extension:
-
-````text
-Open the command palette (Ctrl + Shift + P) and execute the command:
-
->Reload Window
-````
-
-After reloading, the ESBMC extension will be available for all your projects.
-
----
-
-## 9. Step 7 – Install ESBMC via the extension
-
-With the extension installed and active:
-
-1. Open the **Command Palette** (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
-2. Look for and run:
-
-   ```text
-   ESBMC: Install the latest version
-   ```
-
-   If ESBMC is already installed, you could also do the following:
-
-   ````text
-   ESBMC: Update to latest version
-   ````
-
-The extension will automatically download and install the latest ESBMC binary suitable for your Linux environment.
-
----
-
-## 10. Step 8 – Using the extension
-
-### 10.1 Verify a C/C++ file
-
-According to `Teste_ESBMC.txt`, this workflow was successfully tested:
-
-1. Open a C or C++ source file in VS Code.
-2. Open the **Command Palette** (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>).
-3. Run:
-
-   ```text
-   ESBMC: Verify file
-   ```
-
-VS Code opens a terminal showing:
-
-- the ESBMC command line,
-- verification progress,
-- and the final result.
-
-## 12. Summary
-
-By following the steps in this README, you can:
-
-1. Prepare your Linux environment (curl, git, nvm, Node.js, npm).
-2. Install dependencies and compile the ESBMC VS Code extension (`npm install`, `npm run compile`).
-3. Package the extension as a `.vsix` file with `vsce package`.
-4. Install the `.vsix` into Visual Studio Code.
-5. Use the extension to install ESBMC and verify C/C++ programs, either at the file level or per function.
-
-## 13. (Optional) Local AI Integration with Ollama
-
-This extension now supports **local AI explanations** for ESBMC verification results.  
-The AI is fully offline, running through the **Ollama** framework on Linux.
-
-This feature is optional — you can continue using ESBMC normally without AI.
-
----
-
-### Requirements for AI usage
-
-- Linux (tested on Ubuntu)
-- ESBMC installed through this extension
-- Ollama installed and running
-- A local AI model downloaded (recommended below)
-
----
-
-### Install Ollama
-
-Run in terminal:
    ```bash
    curl https://ollama.ai/install.sh | sh
-   ```
-
-Start the service:
-   ```bash
    ollama serve
    ```
-> **Note**  
-> If you see an error such as  
-> `Error: listen tcp 127.0.0.1:11434: bind: address already in use`  
-> it usually means that Ollama is **already running** and listening on port `11434`.
->
-> You can confirm which process is using this port with:
->
-> ```bash
-> sudo lsof -i:11434
-> ```
->
-> And you can check the Ollama service status with:
->
-> ```bash
-> systemctl status ollama
-> ```
->
-> If the service is `active (running)`, you can safely skip `ollama serve` and go directly to the verification step below.
 
+   `Error: listen tcp 127.0.0.1:11434: bind: address already in use` means it
+   is already running; check with `systemctl status ollama`.
 
-Verify that it is running:
+2. Pull the default model:
+
+   ```bash
+   ollama pull llama3.1:8b
+   ```
+
+3. Confirm it answers:
+
    ```bash
    curl http://localhost:11434/api/tags
    ```
 
----
+Host and model are configurable under **AI Integration** (`esbmc.ai.host`,
+`esbmc.ai.model`).
 
-### Install the Recommended Model
+## Troubleshooting
 
-This extension defaults to the model:  `llama3.1:8b`
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| `ESBMC: not found` | ESBMC is not installed | Run **ESBMC: Install latest version** |
+| Verification reports no verdict | ESBMC failed before checking anything | Open the ESBMC output channel |
+| `[ERROR] Could not contact local AI` | Ollama is not running | Run `ollama serve` |
+| AI output is very slow | Model too large for the machine | Try a smaller model in `esbmc.ai.model` |
 
-To install it:
-   ```text
-   ollama pull llama3.1:8b
-   ```
+## Contributing
 
----
+Build instructions, the test suite and the release process are in
+[CONTRIBUTING.md](CONTRIBUTING.md). Issues and pull requests are welcome at
+[github.com/esbmc/vscode-esbmc](https://github.com/esbmc/vscode-esbmc).
 
-### How to use AI Verification
+## License
 
-- Open a C/C++ file in VS Code  
-- Press Ctrl + Shift + P  
-- Run: `ESBMC: Verify File with Local AI`
-
-The output will include:  
-- ESBMC verification results  
-- A concise AI explanation (English only)  
-- Suggested patch with corrected C code
-
----
-
-### Troubleshooting Tips
-
-| Symptom                        | Possible cause            | Fix                             |
-|--------------------------------|--------------------------|--------------------------------|
-| [ERROR] Could not contact local AI | Ollama not running        | Run `ollama serve`              |
-| Very slow output               | Model too large for hardware | Try `llama3.1:3b` model        |
-| ESBMC not detected             | PATH misconfiguration    | Re-install ESBMC via extension  |
-
----
-
-✔ Feature Summary  
-| Feature                          | Status   |
-|---------------------------------|----------|
-| ESBMC Installation              | ✔        |
-| ESBMC Verification inside VS Code |✔      |
-| Local AI-based Analysis using Ollama | NEW ✔ |
+This repository does not yet declare a license. ESBMC itself is distributed
+under its own terms; see [esbmc/esbmc](https://github.com/esbmc/esbmc).
