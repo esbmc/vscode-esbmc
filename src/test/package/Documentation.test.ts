@@ -81,3 +81,39 @@ describe('CONTRIBUTING', () => {
     }
   })
 })
+
+// The README is the Marketplace listing, and the Marketplace serves its
+// relative images by rewriting them to raw GitHub URLs. A moved or renamed
+// screenshot therefore breaks the listing rather than anything in the build.
+describe('README screenshots', () => {
+  const images = [...readme.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(([, src]) => src)
+  // Badges are absolute URLs and would otherwise satisfy this on their own.
+  const screenshots = images.filter(src => !/^https?:/.test(src))
+
+  it('shows at least one screenshot', () => {
+    assert.ok(screenshots.length > 0, 'the listing has no screenshot of its own')
+  })
+
+  it('references only images that exist', () => {
+    for (const src of images) {
+      if (/^https?:/.test(src)) continue
+      assert.ok(fs.existsSync(path.join(ROOT, src)), `README references missing image ${src}`)
+    }
+  })
+
+  // vsce rejects SVG from hosts outside its trusted list. Badges are absolute
+  // URLs it validates against that list at package time; the images the
+  // repository carries are never trusted, so those are the ones to check.
+  it('carries no SVG of its own', () => {
+    for (const src of images) {
+      if (/^https?:/.test(src)) continue
+      assert.ok(!/\.svg(\?|$)/i.test(src), `${src} is an SVG, which vsce rejects from the repository`)
+    }
+  })
+
+  it('gives every screenshot alt text', () => {
+    for (const [, alt, src] of readme.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)) {
+      assert.ok(alt.trim().length > 0, `the image ${src} has no alt text`)
+    }
+  })
+})

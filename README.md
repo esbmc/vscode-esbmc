@@ -9,6 +9,11 @@ Find bugs in C, C++, Python and Solidity without leaving the editor, using
 rather than sampling inputs. A failure comes with a counterexample; a success
 means no execution violates the property, not merely that none was found.
 
+![Verification failing: a squiggle on the out-of-bounds write, one violated property in the Problems panel, and VERIFICATION FAILED in the ESBMC output channel.](examples/buffer-overflow-failed.jpeg)
+
+The bundled `examples/buffer-overflow.c` writes one element past the end of its
+array. ESBMC names the property, the line and the CWEs it corresponds to.
+
 ## Install
 
 1. Install this extension from the
@@ -39,6 +44,13 @@ settings, and reports the result three ways:
   It appears in the Explorer once a run produces a trace.
 - **ESBMC output channel** — the command line that ran, and everything ESBMC
   printed.
+
+![The same file verifying once the loop bound is corrected: no squiggles, an empty Problems panel, and VERIFICATION SUCCESSFUL with both properties passed.](examples/buffer-overflow-success.jpeg)
+
+Correcting the loop bound to `i < SIZE` and re-running turns both properties
+green. This is the distinction bounded model checking buys: the second result
+says no execution up to the bound violates the property, not that none was
+sampled.
 
 Run **ESBMC: Show current flags** to see the command line your settings produce
 before running anything.

@@ -15,4 +15,7 @@ vsc-extension-quickstart.md
 **/*.vsix
 
 # examples/ and walkthroughs/ are deliberately NOT ignored: the Welcome
-# walkthrough reads them from the installed extension directory.
+# walkthrough reads them from the installed extension directory. The README
+# screenshots there are the exception -- the Marketplace serves those from
+# GitHub, so shipping them would only add weight to every install.
+examples/*.jpeg
