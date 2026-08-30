@@ -910,7 +910,6 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.2.0",
     "@types/object-hash": "^3.0.6",
-    "@types/semver": "^7.3.10",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",
@@ -926,8 +925,7 @@
   "dependencies": {
     "@microsoft/vscode-file-downloader-api": "^1.0.1",
     "compare-versions": "^6.1.1",
-    "object-hash": "^3.0.0",
-    "semver": "^7.3.7"
+    "object-hash": "^3.0.0"
   },
   "overrides": {
     "mocha": {
