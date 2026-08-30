@@ -34,11 +34,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - An Apache-2.0 `LICENSE`, matching the licence ESBMC applies to its own
   modifications. The extension runs ESBMC as a subprocess rather than linking
   against it, so ESBMC's own solver-licence constraints do not reach here.
-- The test workflow now also runs on pushes to master, so a merge that breaks
-  master is reported rather than silently passing.
 
 ### Changed
 
+- The test workflow now also runs on pushes to master, so a merge that breaks
+  master is reported rather than silently passing.
 - Pushing to a pull request now supersedes its previous CI run instead of
   queueing beside it. Publishing deliberately does not: a second tag must not
   cancel a release that may already have reached one registry and not the other.

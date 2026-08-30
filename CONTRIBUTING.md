@@ -66,9 +66,10 @@ the VSIX to the GitHub release. It refuses to publish if the tag and the
 `package.json` version disagree.
 
 It needs a registered `esbmc` publisher on both registries, an `OVSX_PAT`
-repository secret for Open VSX, and three for the Marketplace —
-`AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` — belonging to
-an app registration whose federated credential trusts this repository. The
+repository secret for Open VSX, and two for the Marketplace —
+`AZURE_CLIENT_ID` and `AZURE_TENANT_ID` — belonging to an app registration
+whose federated credential trusts this repository and whose service principal
+is an `esbmc` Marketplace publisher. The
 Marketplace side authenticates with Entra ID rather than a personal access
 token because Azure DevOps retires global PATs on 2026-12-01.
 
