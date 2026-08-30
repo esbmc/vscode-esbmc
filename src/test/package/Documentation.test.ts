@@ -47,6 +47,19 @@ describe('README', () => {
     }
   })
 
+  // Without the query the badge falls back to the most recent run across all
+  // branches whenever master has none, which reports a branch nobody merged.
+  it('reports master on the build badge', () => {
+    assert.match(readme, /badge\.svg\?branch=master&event=push/)
+  })
+
+  // Both listings 404 until the first publish, so a link to either is a broken
+  // promise on the front page.
+  it('links to no registry listing that does not exist yet', () => {
+    assert.doesNotMatch(readme, /marketplace\.visualstudio\.com\/items/)
+    assert.doesNotMatch(readme, /open-vsx\.org\/extension/)
+  })
+
   it('points at a contributing guide that exists', () => {
     assert.match(readme, /CONTRIBUTING\.md/)
     assert.ok(fs.existsSync(path.join(ROOT, 'CONTRIBUTING.md')), 'CONTRIBUTING.md is missing')

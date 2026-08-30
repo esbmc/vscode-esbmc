@@ -15,10 +15,11 @@ env:
 
 # Pushing again supersedes the previous run rather than queueing beside it.
 # With a 3-OS matrix plus packaging, a stack of branches otherwise leaves
-# dozens of obsolete jobs holding runners.
+# dozens of obsolete jobs holding runners. Master is exempt: cancelling there
+# leaves the merged commit untested and the badge reading "failing".
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   build:
