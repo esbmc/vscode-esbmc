@@ -29,6 +29,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
   VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
 - Pull requests now package the extension as well as testing it, and check
   that the walkthrough assets are still included.
+- An Apache-2.0 `LICENSE`, matching the licence ESBMC applies to its own
+  modifications. The extension runs ESBMC as a subprocess rather than linking
+  against it, so ESBMC's own solver-licence constraints do not reach here.
+- The test workflow now also runs on pushes to master, so a merge that breaks
+  master is reported rather than silently passing.
 
 ### Changed
 

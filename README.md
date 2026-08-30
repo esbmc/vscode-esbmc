@@ -150,5 +150,8 @@ Build instructions, the test suite and the release process are in
 
 ## License
 
-This repository does not yet declare a license. ESBMC itself is distributed
-under its own terms; see [esbmc/esbmc](https://github.com/esbmc/esbmc).
+Apache-2.0; see [LICENSE](LICENSE). This covers the extension only. ESBMC
+itself is distributed under its own terms, which differ and are more involved
+— see [COPYING](https://github.com/esbmc/esbmc/blob/master/COPYING) in
+[esbmc/esbmc](https://github.com/esbmc/esbmc). The extension runs ESBMC as a
+subprocess and does not link against it.

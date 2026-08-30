@@ -4,6 +4,7 @@
   "description": "Verify C and C++ programs from VS Code with ESBMC, the Efficient SMT-based Bounded Model Checker",
   "publisher": "esbmc",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.68.0"
   },
