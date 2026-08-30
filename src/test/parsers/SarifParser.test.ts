@@ -3,11 +3,15 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { parseSarif, resolveFindingPaths } from '../../parsers/sarifParser'
 
-const FIXTURE = path.resolve(__dirname, '..', '..', '..', 'src', 'test', 'fixtures', 'violation.sarif')
+const FIXTURES = path.resolve(__dirname, '..', '..', '..', 'src', 'test', 'fixtures')
 
 // A real report from `esbmc fails.c --sarif-output`, with only the absolute
 // source path made portable.
-const violation = fs.readFileSync(FIXTURE, 'utf8')
+const violation = fs.readFileSync(path.join(FIXTURES, 'violation.sarif'), 'utf8')
+
+// A real report from `esbmc b.py --sarif-output` on ESBMC 8.5.0, verbatim: the
+// Python uncaught-exception properties carry no location at all.
+const pythonUnlocated = fs.readFileSync(path.join(FIXTURES, 'python-unlocated.sarif'), 'utf8')
 
 function sarif (results: unknown[]): string {
   return JSON.stringify({ version: '2.1.0', runs: [{ results }] })
@@ -103,6 +107,35 @@ describe('parseSarif', () => {
       { message: { text: 'no uri' }, locations: [{ physicalLocation: { region: { startLine: 1 } } }] },
       { locations: [{ physicalLocation: { artifactLocation: { uri: '/a.c' } } }] }
     ])), [])
+  })
+
+  it('places an unlocated result on the file being verified', () => {
+    const [finding] = parseSarif(pythonUnlocated, '/src/b.py')
+    assert.strictEqual(finding.file, '/src/b.py')
+    assert.strictEqual(finding.line, 1)
+    assert.strictEqual(finding.message, 'uncaught exception: IndexError')
+  })
+
+  // Without the subject there is still nowhere to put it, so the drop stands.
+  it('still drops an unlocated result when no subject is given', () => {
+    assert.deepStrictEqual(parseSarif(pythonUnlocated), [])
+  })
+
+  // The subject is a fallback, never an override: a located result keeps the
+  // file ESBMC named, which for an included header is not the file verified.
+  it('prefers the location ESBMC gave over the subject', () => {
+    const [finding] = parseSarif(sarif([{
+      message: { text: 'x' },
+      locations: [{ physicalLocation: { artifactLocation: { uri: 'inc/hdr.h' }, region: { startLine: 7 } } }]
+    }]), '/src/a.c')
+    assert.strictEqual(finding.file, 'inc/hdr.h')
+    assert.strictEqual(finding.line, 7)
+  })
+
+  it('still drops a result with no message even with a subject', () => {
+    assert.deepStrictEqual(parseSarif(sarif([
+      { locations: [{ physicalLocation: { artifactLocation: { uri: '' } } }] }
+    ]), '/src/a.c'), [])
   })
 
   it('rejects a report that is not JSON', () => {
