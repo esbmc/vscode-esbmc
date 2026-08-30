@@ -1,13 +1,18 @@
 # ESBMC for Visual Studio Code
 
 [![Run tests](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml/badge.svg)](https://github.com/esbmc/vscode-esbmc/actions/workflows/on-pr-master.yml)
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/esbmc.vscode-esbmc)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/esbmc.vscode-esbmc.svg)](https://marketplace.visualstudio.com/items?itemName=esbmc.vscode-esbmc)
 [![Open VSX](https://img.shields.io/open-vsx/v/esbmc/vscode-esbmc)](https://open-vsx.org/extension/esbmc/vscode-esbmc)
 
 Find bugs in C, C++, Python and Solidity without leaving the editor, using
 [ESBMC](http://esbmc.org/) — a bounded model checker that proves properties
 rather than sampling inputs. A failure comes with a counterexample; a success
 means no execution violates the property, not merely that none was found.
+
+![Verification failing: a squiggle on the out-of-bounds write, one violated property in the Problems panel, and VERIFICATION FAILED in the ESBMC output channel.](examples/buffer-overflow-failed.jpeg)
+
+The bundled `examples/buffer-overflow.c` writes one element past the end of its
+array. ESBMC names the property, the line and the CWEs it corresponds to.
 
 ## Install
 
@@ -39,6 +44,13 @@ settings, and reports the result three ways:
   It appears in the Explorer once a run produces a trace.
 - **ESBMC output channel** — the command line that ran, and everything ESBMC
   printed.
+
+![The same file verifying once the loop bound is corrected: no squiggles, an empty Problems panel, and VERIFICATION SUCCESSFUL with both properties passed.](examples/buffer-overflow-success.jpeg)
+
+Correcting the loop bound to `i < SIZE` and re-running turns both properties
+green. This is the distinction bounded model checking buys: the second result
+says no execution up to the bound violates the property, not that none was
+sampled.
 
 Run **ESBMC: Show current flags** to see the command line your settings produce
 before running anything.
@@ -150,5 +162,8 @@ Build instructions, the test suite and the release process are in
 
 ## License
 
-This repository does not yet declare a license. ESBMC itself is distributed
-under its own terms; see [esbmc/esbmc](https://github.com/esbmc/esbmc).
+Apache-2.0; see [LICENSE](LICENSE). This covers the extension only. ESBMC
+itself is distributed under its own terms, which differ and are more involved
+— see [COPYING](https://github.com/esbmc/esbmc/blob/master/COPYING) in
+[esbmc/esbmc](https://github.com/esbmc/esbmc). The extension runs ESBMC as a
+subprocess and does not link against it.

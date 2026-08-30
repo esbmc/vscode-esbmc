@@ -24,6 +24,12 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    # contents: write is what action-gh-release needs to attach the VSIX. The
+    # repository default is already write, but naming id-token here narrows
+    # every other scope to none, so it has to be restated.
+    permissions:
+      contents: write
+      id-token: write
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -43,10 +49,20 @@ jobs:
         fi
     - name: Package
       run: npx --yes "$VSCE" package --out vscode-esbmc.vsix
+    # Entra ID rather than a personal access token: Azure DevOps retires global
+    # PATs on 2026-12-01, and "All accessible organizations" -- the scope the
+    # Marketplace docs ask for -- is exactly what is being retired. Needs an app
+    # registration whose federated credential trusts this repository, with its
+    # service principal added as an esbmc Marketplace publisher.
+    - name: Sign in to Azure
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        # Publishing needs a Marketplace publisher, not an Azure subscription.
+        allow-no-subscriptions: true
     - name: Publish to the VS Code Marketplace
-      run: npx --yes "$VSCE" publish --packagePath vscode-esbmc.vsix
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: npx --yes "$VSCE" publish --packagePath vscode-esbmc.vsix --azure-credential
     - name: Publish to Open VSX
       run: npx --yes "$OVSX" publish vscode-esbmc.vsix
       env:

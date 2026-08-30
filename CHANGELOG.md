@@ -4,7 +4,7 @@ All notable changes to the "vscode-esbmc" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.2.0]
 
 ### Added
 
@@ -26,12 +26,19 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
   produce, and offers to copy it.
 - A tag-triggered workflow that runs the test matrix, packages the extension
   and publishes it to the VS Code Marketplace and Open VSX, then attaches the
-  VSIX to the release. Needs `VSCE_PAT` and `OVSX_PAT` repository secrets.
+  VSIX to the release. The Marketplace side authenticates with Microsoft Entra
+  ID rather than a personal access token, since Azure DevOps retires global
+  PATs on 2026-12-01; Open VSX still uses an `OVSX_PAT` secret.
 - Pull requests now package the extension as well as testing it, and check
   that the walkthrough assets are still included.
+- An Apache-2.0 `LICENSE`, matching the licence ESBMC applies to its own
+  modifications. The extension runs ESBMC as a subprocess rather than linking
+  against it, so ESBMC's own solver-licence constraints do not reach here.
 
 ### Changed
 
+- The test workflow now also runs on pushes to master, so a merge that breaks
+  master is reported rather than silently passing.
 - Pushing to a pull request now supersedes its previous CI run instead of
   queueing beside it. Publishing deliberately does not: a second tag must not
   cancel a release that may already have reached one registry and not the other.
