@@ -1,3 +1,5 @@
+import * as path from 'path'
+
 export interface SupportedLanguage {
   /** VS Code language identifier, which is not always the file extension. */
   id: string
@@ -37,3 +39,30 @@ export const SUPPORTED_EXTENSIONS = new Set([
   ...SUPPORTED_LANGUAGES.flatMap(language => language.extensions),
   ...EXTRA_EXTENSIONS
 ])
+
+/**
+ * Whether ESBMC can verify this path, judged the way ESBMC judges it.
+ *
+ * Takes a path rather than a document because a chat request often carries
+ * only a file reference, with nothing open in an editor.
+ */
+export function isSupportedFile (file: string): boolean {
+  return SUPPORTED_EXTENSIONS.has(extensionOf(file))
+}
+
+const LANGUAGE_BY_EXTENSION = new Map(
+  SUPPORTED_LANGUAGES.flatMap(language => language.extensions.map(ext => [ext, language.id] as const))
+)
+
+function extensionOf (file: string): string {
+  return path.extname(file).slice(1).toLowerCase()
+}
+
+/**
+ * The language a file is written in, or undefined for one ESBMC accepts
+ * without VS Code naming it. Derived from {@link SUPPORTED_LANGUAGES} so a
+ * new language cannot be verifiable but described to a model as some other.
+ */
+export function languageOf (file: string): string | undefined {
+  return LANGUAGE_BY_EXTENSION.get(extensionOf(file))
+}
