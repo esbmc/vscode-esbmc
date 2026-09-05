@@ -5,7 +5,7 @@ import { Configuration } from '../@types/vscode.configuration'
 import { statusText } from '../parsers/verdict'
 import { EsbmcDiagnostics } from '../diagnostics/esbmcDiagnostics'
 import { TraceView } from '../diagnostics/traceView'
-import { SUPPORTED_EXTENSIONS } from '../languages'
+import { isSupportedFile } from '../languages'
 import { EsbmcNotFoundError, VerifyResult, verifyFile } from '../verify'
 import { disposeOutput, esbmcOutput as output } from '../utils/output'
 
@@ -78,7 +78,26 @@ function showStatus (text: string): void {
   item.show()
 }
 
-export async function run (overides?: Configuration, commentFlags?: string, document?: vscode.TextDocument): Promise<void> {
+export interface RunOptions {
+  /**
+   * Bring the output channel forward. The chat participant answers in its own
+   * view, where stealing focus to the panel is an interruption.
+   */
+  reveal?: boolean
+}
+
+/**
+ * Verifies one file and reports it everywhere the editor shows a verdict.
+ *
+ * @returns what ESBMC found, or undefined when the run never started or was
+ * superseded by a newer one.
+ */
+export async function run (
+  overides?: Configuration,
+  commentFlags?: string,
+  document?: vscode.TextDocument,
+  options: RunOptions = {}
+): Promise<VerifyResult | undefined> {
   overides = overides ?? {}
   const target = document ?? vscode.window.activeTextEditor?.document
   if (target === undefined) {
@@ -92,7 +111,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
     vscode.window.showErrorMessage('ESBMC: Cannot determine file type, not checking')
     return
   }
-  if (!SUPPORTED_EXTENSIONS.has(fileExt)) {
+  if (!isSupportedFile(filePath)) {
     vscode.window.showErrorMessage(`ESBMC: Currently no support for .${fileExt}, not checking`)
     return
   }
@@ -123,7 +142,9 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   // Not cleared: the channel also carries the flag report the user may have
   // just asked for, and a save-triggered run would wipe it without a word.
   channel.appendLine(`\n${'\u2500'.repeat(60)}\nESBMC: verifying ${filePath}`)
-  channel.show(true)
+  if (options.reveal !== false) {
+    channel.show(true)
+  }
 
   let result: VerifyResult
   try {
@@ -151,6 +172,7 @@ export async function run (overides?: Configuration, commentFlags?: string, docu
   if (result.verdict.kind === 'timeout') {
     channel.appendLine(`\nESBMC: killed after ${timeoutSeconds}s (esbmc.editor.timeout)`)
   }
+  return result
 }
 
 /**
@@ -163,6 +185,5 @@ function getFileExtension (file: string): string | undefined {
 }
 
 export function isSupported (document: vscode.TextDocument): boolean {
-  const fileExt = getFileExtension(document.fileName)
-  return fileExt !== undefined && SUPPORTED_EXTENSIONS.has(fileExt)
+  return isSupportedFile(document.fileName)
 }

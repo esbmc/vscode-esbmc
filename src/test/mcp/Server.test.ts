@@ -3,8 +3,6 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
-import { describeResult } from '../../mcp/server'
-import { VerifyResult } from '../../verify'
 
 const MAIN = path.resolve(__dirname, '..', '..', 'mcp', 'main.js')
 
@@ -150,45 +148,5 @@ describe('MCP server over stdio', function () {
       arguments: { file: '/nonexistent/nope.c' }
     })
     assert.ok(reply.result.isError === true || /not installed|Could not verify|FAILED|NO VERDICT/.test(reply.result.content[0].text))
-  })
-})
-
-describe('describeResult', () => {
-  function result (overrides: Partial<VerifyResult> = {}): VerifyResult {
-    return {
-      verdict: { kind: 'success' },
-      findings: [],
-      trace: [],
-      transcript: '',
-      command: 'esbmc a.c',
-      ...overrides
-    }
-  }
-
-  it('states plainly what a successful result means', () => {
-    assert.match(describeResult('a.c', result()), /VERIFICATION SUCCESSFUL/)
-  })
-
-  it('lists each violated property with its location', () => {
-    const text = describeResult('a.c', result({
-      verdict: { kind: 'violations', count: 1 },
-      findings: [{ file: '/src/a.c', line: 5, message: 'array bounds violated', severity: 'error', cwes: ['CWE-787'] }]
-    }))
-    assert.match(text, /VERIFICATION FAILED: 1 property/)
-    assert.match(text, /\/src\/a\.c:5 array bounds violated \[CWE-787\]/)
-  })
-
-  it('includes the counterexample values', () => {
-    const text = describeResult('a.c', result({
-      verdict: { kind: 'violations', count: 1 },
-      trace: [{ file: '/src/a.c', line: 4, assumptions: ['x == 11'] }]
-    }))
-    assert.match(text, /Counterexample:/)
-    assert.match(text, /\/src\/a\.c:4 x == 11/)
-  })
-
-  it('distinguishes a timeout from a failure', () => {
-    assert.match(describeResult('a.c', result({ verdict: { kind: 'timeout', seconds: 5 } })), /TIMEOUT/)
-    assert.doesNotMatch(describeResult('a.c', result({ verdict: { kind: 'timeout', seconds: 5 } })), /FAILED/)
   })
 })

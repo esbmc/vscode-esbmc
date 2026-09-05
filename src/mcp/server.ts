@@ -1,7 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { McpStdioServer } from './protocol'
-import { EsbmcNotFoundError, VerifyResult, verifyFile } from '../verify'
+import { EsbmcNotFoundError, verifyFile } from '../verify'
+import { describeText } from '../report'
 
 // out/mcp/server.js -> the extension root. The server runs outside VS Code, so
 // there is no extension context to read the manifest from.
@@ -9,48 +10,6 @@ const MANIFEST = path.join(__dirname, '..', '..', 'package.json')
 
 export function serverVersion (): string {
   return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).version
-}
-
-/** What an agent gets back, kept stable and independent of ESBMC's log format. */
-export function describeResult (file: string, result: VerifyResult): string {
-  const lines: string[] = []
-  switch (result.verdict.kind) {
-    case 'success':
-      lines.push(`VERIFICATION SUCCESSFUL: ESBMC proved every checked property of ${file}.`)
-      break
-    case 'violations':
-      lines.push(`VERIFICATION FAILED: ${result.verdict.count} property/properties violated in ${file}.`)
-      break
-    case 'failed-without-findings':
-      lines.push(`VERIFICATION FAILED in ${file}, but ESBMC reported no property to place.`)
-      break
-    case 'timeout':
-      lines.push(`TIMEOUT: ESBMC was killed after ${result.verdict.seconds}s on ${file}.`)
-      break
-    case 'unknown':
-      lines.push(`NO VERDICT: ESBMC did not reach a conclusion on ${file}.`)
-      break
-  }
-
-  for (const finding of result.findings) {
-    const cwes = finding.cwes.length > 0 ? ` [${finding.cwes.join(', ')}]` : ''
-    lines.push(`  ${finding.file}:${finding.line} ${finding.message}${cwes}`)
-  }
-
-  if (result.trace.length > 0) {
-    lines.push('', 'Counterexample:')
-    for (const step of result.trace) {
-      const where = step.line === undefined ? '' : `${step.file ?? ''}:${step.line} `
-      const what = step.assumptions.length > 0
-        ? step.assumptions.join(', ')
-        : step.enterFunction === undefined ? '' : `enter ${step.enterFunction}`
-      if (where !== '' || what !== '') {
-        lines.push(`  ${where}${what}`.trimEnd())
-      }
-    }
-  }
-
-  return lines.join('\n')
 }
 
 export function createServer (): McpStdioServer {
@@ -81,7 +40,7 @@ export function createServer (): McpStdioServer {
       }
       try {
         const result = await verifyFile(file, { flags, timeoutSeconds })
-        return { content: [{ type: 'text' as const, text: describeResult(file, result) }] }
+        return { content: [{ type: 'text' as const, text: describeText(file, result) }] }
       } catch (error) {
         const message = error instanceof EsbmcNotFoundError
           ? 'ESBMC is not installed. Install it from https://github.com/esbmc/esbmc/releases or through the VS Code extension.'

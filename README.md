@@ -69,7 +69,7 @@ before running anything.
 | `ESBMC: Install latest version` | Download and install ESBMC |
 | `ESBMC: Update to latest version` | Update an existing install |
 | `ESBMC: Open example program` | Open the bundled example |
-| `ESBMC: Verify file with Local AI` | Verify, then explain the counterexample with a local model |
+| `ESBMC: Explain and repair with AI` | Verify, then ask a model to explain the counterexample |
 
 A CodeLens above each function verifies that function on its own.
 
@@ -87,6 +87,27 @@ Everything else maps to an ESBMC flag, grouped under **Front End**, **BMC**,
 and **AI Integration** in the Settings UI. Each value documents the flag it
 produces. Only settings that differ from their default emit anything, which is
 why **ESBMC: Show current flags** exists.
+
+## Ask ESBMC in chat
+
+Type `@esbmc` in the Chat view to verify the file you are looking at, or one
+you attach with `#file:`, and get the verdict back in the conversation.
+
+| | |
+| --- | --- |
+| `@esbmc /verify` | Run ESBMC and report the verdict. No model involved, so this works with no AI set up at all |
+| `@esbmc /explain` | Verify, then explain the counterexample |
+| `@esbmc /fix` | Verify, then propose a program that verifies |
+| `@esbmc <your question>` | Verify, then answer the question you asked |
+
+Everything but `/verify` goes to a model, and answers come from whichever one
+is selected in the chat model picker, so no second install and no API key of
+its own. Verification uses the flags your settings produce, so `@esbmc` and
+**ESBMC: Verify file** agree on the same file, and the squiggles, the Problems
+panel and the **ESBMC Counterexample** view follow along.
+
+ESBMC reads the file from disk. With unsaved changes, `@esbmc` says so and
+verifies the saved version.
 
 ## Use ESBMC from an AI agent
 
@@ -118,36 +139,41 @@ The extension declares `extensionKind: ["workspace"]`, so with **Remote-SSH**,
 local UI host. ESBMC is installed and executed on the remote machine — the
 supported route if you want a Linux ESBMC from a Windows or macOS desktop.
 
-## Local AI explanations (optional)
+## Explain and repair (optional)
 
-**ESBMC: Verify file with Local AI** runs ESBMC and then asks a local model to
-explain the counterexample and suggest a fix. It is fully offline, through
-[Ollama](https://ollama.ai/), and entirely optional.
+**ESBMC: Explain and repair with AI** verifies the active file and then asks a
+model about the counterexample, in the ESBMC output channel. `esbmc.ai.backend`
+picks who answers, for both this command and `@esbmc`:
 
-1. Install Ollama and start it:
+| `esbmc.ai.backend` | Who answers | What it needs |
+| --- | --- | --- |
+| `chat` (default) | The model VS Code chat already has | A chat provider such as GitHub Copilot |
+| `ollama` | A model on your own machine | [Ollama](https://ollama.ai/) running locally |
+| `esbmc-ai` | [ESBMC-AI](https://github.com/esbmc/esbmc-ai) | `pip install esbmc-ai`, a config file and a provider API key |
 
-   ```bash
-   curl https://ollama.ai/install.sh | sh
-   ollama serve
-   ```
+One backend never stands in for another: if the one you chose cannot answer,
+the verdict is still reported and the reply says which setting to change.
 
-   `Error: listen tcp 127.0.0.1:11434: bind: address already in use` means it
-   is already running; check with `systemctl status ollama`.
+**Ollama** keeps everything offline. Install and start it, pull the model named
+in `esbmc.ai.model`, and confirm it answers:
 
-2. Pull the default model:
+```bash
+curl https://ollama.ai/install.sh | sh
+ollama serve
+ollama pull llama3.1:8b
+curl http://localhost:11434/api/tags
+```
 
-   ```bash
-   ollama pull llama3.1:8b
-   ```
+`Error: listen tcp 127.0.0.1:11434: bind: address already in use` means it is
+already running; check with `systemctl status ollama`. Host and model are
+`esbmc.ai.host` and `esbmc.ai.model`.
 
-3. Confirm it answers:
-
-   ```bash
-   curl http://localhost:11434/api/tags
-   ```
-
-Host and model are configurable under **AI Integration** (`esbmc.ai.host`,
-`esbmc.ai.model`).
+**ESBMC-AI** repairs the program and re-verifies its own patch rather than
+answering in prose, so it is the only backend that can tell you a fix works.
+It needs its own TOML configuration and a provider API key; point
+`esbmc.ai.esbmcAi.configFile` at the file, or set `ESBMCAI_CONFIG_FILE`. A
+repair loop runs for minutes, which is what `esbmc.ai.timeout` bounds rather
+than `esbmc.editor.timeout`.
 
 ## Troubleshooting
 
@@ -155,7 +181,10 @@ Host and model are configurable under **AI Integration** (`esbmc.ai.host`,
 | --- | --- | --- |
 | `ESBMC: not found` | ESBMC is not installed | Run **ESBMC: Install latest version** |
 | Verification reports no verdict | ESBMC failed before checking anything | Open the ESBMC output channel |
-| `[ERROR] Could not contact local AI` | Ollama is not running | Run `ollama serve` |
+| `@esbmc` is not offered in chat | VS Code older than 1.95, or no chat provider installed | Update VS Code; install a chat provider such as GitHub Copilot |
+| `No chat model is available` | Nothing provides a model to VS Code chat | Install a chat provider, or set `esbmc.ai.backend` to `ollama` |
+| `Ollama did not answer` | Ollama is not running | Run `ollama serve` |
+| `ESBMC-AI is not installed` | Not on `PATH` | `pip install esbmc-ai`, or set `esbmc.ai.esbmcAi.path` |
 | AI output is very slow | Model too large for the machine | Try a smaller model in `esbmc.ai.model` |
 
 ## Contributing

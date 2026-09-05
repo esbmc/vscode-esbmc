@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "icon": "images/icon.png",
   "engines": {
-    "vscode": "^1.68.0"
+    "vscode": "^1.95.0"
   },
   "categories": [
     "Testing",
@@ -25,7 +25,8 @@
     "onLanguage:python",
     "onLanguage:solidity",
     "onCommand:vscode-esbmc.showOutput",
-    "onCommand:vscode-esbmc.showFlags"
+    "onCommand:vscode-esbmc.showFlags",
+    "onChatParticipant:esbmc.chat"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -762,17 +763,52 @@
           "esbmc.ai.enabled": {
             "type": "boolean",
             "default": true,
-            "description": "Enable Local AI explanation using Ollama."
+            "markdownDescription": "Let **ESBMC: Explain and repair with AI** call a model after verification. The `@esbmc` chat participant is unaffected."
+          },
+          "esbmc.ai.backend": {
+            "type": "string",
+            "default": "chat",
+            "enum": [
+              "chat",
+              "ollama",
+              "esbmc-ai"
+            ],
+            "markdownDescription": "Which model answers **ESBMC: Explain and repair with AI**.",
+            "markdownEnumDescriptions": [
+              "The model already available to VS Code chat — Copilot, or whatever else provides one. Needs no extra install.",
+              "A local model served by [Ollama](https://ollama.ai/), configured by `#esbmc.ai.host#` and `#esbmc.ai.model#`. Fully offline.",
+              "[ESBMC-AI](https://github.com/esbmc/esbmc-ai), which repairs the program and re-verifies its own patch instead of answering in prose. Configured by `#esbmc.ai.esbmcAi.path#`."
+            ]
           },
           "esbmc.ai.host": {
             "type": "string",
             "default": "http://localhost:11434",
-            "description": "Ollama local server URL."
+            "markdownDescription": "Ollama server URL, used when `#esbmc.ai.backend#` is `ollama`."
           },
           "esbmc.ai.model": {
             "type": "string",
             "default": "llama3.1:8b",
-            "description": "Ollama model name used for analysis and explanation."
+            "markdownDescription": "Ollama model name, used when `#esbmc.ai.backend#` is `ollama`."
+          },
+          "esbmc.ai.esbmcAi.path": {
+            "type": "string",
+            "default": "esbmc-ai",
+            "markdownDescription": "The ESBMC-AI executable, used when `#esbmc.ai.backend#` is `esbmc-ai`. Install it with `pip install esbmc-ai`."
+          },
+          "esbmc.ai.esbmcAi.model": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Passed to ESBMC-AI as `--ai-model`. Empty leaves the choice to ESBMC-AI's own configuration."
+          },
+          "esbmc.ai.esbmcAi.configFile": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Passed to ESBMC-AI as `--config-file`. ESBMC-AI refuses to start without a TOML configuration, and reads `ESBMCAI_CONFIG_FILE` from the environment when this is empty."
+          },
+          "esbmc.ai.timeout": {
+            "type": "number",
+            "default": 600,
+            "markdownDescription": "Kill Ollama or ESBMC-AI after this many seconds; `0` waits indefinitely. The `chat` backend is bounded by VS Code itself. Separate from `#esbmc.editor.timeout#` because a repair loop re-verifies its own patch and takes far longer than one ESBMC run."
           }
         }
       },
@@ -797,6 +833,29 @@
         }
       }
     ],
+    "chatParticipants": [
+      {
+        "id": "esbmc.chat",
+        "name": "esbmc",
+        "fullName": "ESBMC",
+        "description": "Verify the open file and explain what ESBMC proved or refuted",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "verify",
+            "description": "Verify the file and report the verdict"
+          },
+          {
+            "name": "explain",
+            "description": "Explain the counterexample ESBMC found"
+          },
+          {
+            "name": "fix",
+            "description": "Propose a change that makes verification succeed"
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "vscode-esbmc.verify.file",
@@ -812,7 +871,7 @@
       },
       {
         "command": "vscode-esbmc.verify.file.withAI",
-        "title": "ESBMC: Verify file with Local AI"
+        "title": "ESBMC: Explain and repair with AI"
       },
       {
         "command": "vscode-esbmc.openExample",
@@ -903,7 +962,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:package": "mocha --ui bdd out/test/package/**/*.test.js"
+    "test:package": "mocha --ui bdd out/test/package/**/*.test.js",
+    "test:headless": "mocha --ui bdd --ignore out/test/diagnostics/*.test.js --ignore out/test/parsers/ConfigParser.test.js --ignore out/test/parsers/ConfigScopesThroughParser.test.js out/test/**/*.test.js"
   },
   "extensionDependencies": [
     "mindaro-dev.file-downloader"
@@ -912,17 +972,17 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.4.1",
     "@types/object-hash": "^3.0.6",
-    "@types/vscode": "^1.134.0",
+    "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.68.0",
     "@vscode/test-electron": "^3.1.0",
-    "eslint": "^10.9.1",
+    "eslint": "^8.57.1",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-n": "^18.3.0",
-    "eslint-plugin-promise": "^7.3.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.6.0",
     "mocha": "^12.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@microsoft/vscode-file-downloader-api": "^1.0.1",
