@@ -24,6 +24,10 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    # The federated credential binds here rather than to a branch or tag: a tag
+    # subject names one tag (refs/tags/v0.2.0), so tag binding would need a new
+    # credential for every release. One environment covers all of them.
+    environment: release
     # contents: write is what action-gh-release needs to attach the VSIX. The
     # repository default is already write, but naming id-token here narrows
     # every other scope to none, so it has to be restated.
