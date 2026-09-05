@@ -82,10 +82,15 @@ export async function resolveRedirect (url: string, maxHops = 5): Promise<string
   throw new Error(`${url} still redirects after ${maxHops} hops`)
 }
 
-export async function postJson (url: string, payload: unknown): Promise<HttpResponse> {
+export async function postJson (
+  url: string,
+  payload: unknown,
+  timeoutMs?: number
+): Promise<HttpResponse> {
   return request(url, {
     method: 'POST',
     body: JSON.stringify(payload),
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    timeoutMs
   })
 }

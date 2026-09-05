@@ -34,8 +34,13 @@ npm run compile && npm run test:package
 ```
 
 Much of the rest of the suite also avoids importing `vscode` — deliberately,
-so it stays runnable outside the harness — and can be pointed at directly with
-`node node_modules/mocha/bin/mocha.js --ui bdd out/test/utils/*.test.js`.
+so it stays runnable outside the harness. `npm run test:headless` runs all of
+it, everything but the three files that do need the editor:
+
+```bash
+npm run compile && npm run test:headless
+```
+
 Tests that shell out to ESBMC skip themselves when it is not installed, so a
 machine without it still gets a green run, just a smaller one.
 

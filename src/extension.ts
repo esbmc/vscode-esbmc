@@ -4,7 +4,9 @@
 import * as vscode from 'vscode'
 import { registerCodeLens } from './codelens/registerCodeLense'
 import { registerCommands } from './commands/registerCommands'
-import { verifyWithAI } from './commands/aiExplain'
+import { explainWithAi } from './commands/aiExplain'
+import { registerChatParticipant } from './chat/participant'
+import { disposeAiState } from './ai/backend'
 import { disposeRunState, isSupported, run } from './commands/run'
 import { setStorageRoot } from './utils/esbmcPath'
 
@@ -20,8 +22,8 @@ export function activate (context: vscode.ExtensionContext) {
   // Register Commands
   context.subscriptions.push(...registerCommands(context))
   context.subscriptions.push(...registerCodeLens())
-  const aiCommand = vscode.commands.registerCommand('vscode-esbmc.verify.file.withAI', verifyWithAI)
-  context.subscriptions.push(aiCommand)
+  context.subscriptions.push(vscode.commands.registerCommand('vscode-esbmc.verify.file.withAI', explainWithAi))
+  context.subscriptions.push(registerChatParticipant(context))
 
   let saveTimer: ReturnType<typeof setTimeout> | undefined
   context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(document => {
@@ -41,6 +43,7 @@ export function activate (context: vscode.ExtensionContext) {
     dispose: () => {
       clearTimeout(saveTimer)
       disposeRunState()
+      disposeAiState()
     }
   })
 }

@@ -4,6 +4,39 @@ All notable changes to the "vscode-esbmc" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [Unreleased]
+
+### Added
+
+- An `@esbmc` chat participant. `/verify` runs ESBMC and reports the verdict
+  with no model involved; `/explain`, `/fix` and a question in your own words
+  answer with whichever model the chat model picker is set to, so there is no
+  second install and no API key of the extension's own. Verification goes
+  through the same path the palette command uses, so a chat verdict is the one
+  the configured flags produce.
+- `esbmc.ai.backend` chooses who answers **ESBMC: Explain and repair with AI**:
+  the VS Code chat model, Ollama, or [ESBMC-AI](https://github.com/esbmc/esbmc-ai),
+  which repairs a program and re-verifies its own patch. Ollama is now one
+  backend rather than the only one. `esbmc.ai.timeout` bounds a repair loop,
+  which outlives a single ESBMC run by minutes.
+
+### Changed
+
+- **Requires VS Code 1.95 or newer.** The chat participant API is not present
+  before it.
+- `ESBMC: Verify file with Local AI` is now `ESBMC: Explain and repair with AI`,
+  since a local model is no longer the only thing it can ask.
+
+### Fixed
+
+- The AI prompt no longer asks for C regardless of the file, which invited a
+  model to answer a Python or Solidity program with a C rewrite. Nor does it
+  send an unbounded transcript, which a loop-heavy program pushes into the
+  megabytes.
+- Explaining a counterexample no longer leaves a new output channel behind on
+  every invocation, and reuses the ESBMC channel rather than opening one of
+  its own.
+
 ## [0.2.0]
 
 ### Added

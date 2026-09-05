@@ -71,8 +71,9 @@ describe('welcome walkthrough', () => {
     }
   })
 
-  // engines.vscode is ^1.68, which predates generated activation events, so a
-  // linked command with no onCommand entry silently does nothing on a cold start.
+  // VS Code generates these for contributed commands, so the explicit entries
+  // are belt and braces — but removing one is a silent cold-start failure, so
+  // the manifest keeps them and this keeps the manifest honest.
   it('can activate the extension for every command it links', () => {
     for (const step of steps) {
       for (const [, command] of step.description.matchAll(/\(command:([\w.-]+)\)/g)) {
